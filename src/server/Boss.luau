@@ -17,7 +17,8 @@
 -- (GDD section 4): parries and interrupts fill it; when full it is Broken for 3 s, its attack or cast is
 -- cancelled, and the meter locks for 25 s.
 --
--- Set the "DamageScale" attribute on the boss model while playing to make it easier for solo tests.
+-- Set the "DamageScale" attribute on the boss model while playing to make it easier for solo tests, and
+-- "SetHealth" (a fraction, e.g. 0.55) to jump to that much HP, to try phase 2.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -209,7 +210,7 @@ function Boss.build(post: CFrame): Model
 	root:SetNetworkOwner(nil) -- server physics, so everyone sees the same leaps
 
 	local attachment = Instance.new("Attachment")
-	attachment.Name = "Facing"
+	attachment.Name = "FacingAttachment"
 	attachment.Parent = root
 	local align = Instance.new("AlignOrientation")
 	align.Name = "Facing"
@@ -788,6 +789,11 @@ function Boss:step(now: number)
 			self:reset()
 		end
 		return
+	end
+	local setHealth = self.model:GetAttribute("SetHealth")
+	if setHealth then
+		self.model:SetAttribute("SetHealth", nil)
+		actor.health = math.clamp(setHealth, 0, 1) * actor.maxHealth
 	end
 	if actor.health <= 0 then
 		self:die(now)

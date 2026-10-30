@@ -40,6 +40,7 @@ local function label(parent: Instance, props): TextLabel
 	l.TextColor3 = Color3.new(1, 1, 1)
 	l.TextStrokeTransparency = 0.5
 	l.TextSize = 14
+	l.Text = "" -- Roblox shows "Label" until text is set
 	for k, v in props do
 		(l :: any)[k] = v
 	end

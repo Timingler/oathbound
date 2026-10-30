@@ -13,7 +13,8 @@ The first slice tests whether the combat feels good:
   - **Ranger** (ranged damage, key 4): a skill class with real arrows and no auto-aim: hold right click to aim (zoom, draw), left click to loose. The longer the draw, the harder and faster the arrow; arrows drop slightly and take time to arrive. Quick Shot (left click without aiming), Aimed Shot (left click while aiming), Piercing Arrow, Volley (arrows rain on a circle) and Disengage (leap back). The base class for Marksman, Beastmaster and Druid later. Bow, animations and sounds from the Bow & Arrow System kit.
 - **One-action timeline** on the server: wind-up, fire, recovery, in 50 ms ticks. Dodging cancels a wind-up and costs nothing.
 - **Block, parry and dodge.** Attack colours tell you what works: white (anything), orange (dodge or parry), red (dodge or move).
-- **The Ashen Sentinel**, a test boss with a white swing, an orange tank-buster, a red sweep and an interruptible cast. It also has a Break meter: parries and interrupts fill it, and a full meter stuns the boss for 3 seconds.
+- **The Ashen Sentinel**, a giant hammer knight in its own ring at the far end of the arena; step inside the ring to start the fight. Every attack is drawn on the floor and fills up before it lands: a 3-swing white Cleave, an orange Sundering Blow, an Ash Leap onto the farthest player, an Ash Sweep and an interruptible Doom Chant. Below 60% HP it catches fire and adds the Cinder Ring (stand close) and Ember Lines (stand between the lines). Hits never flinch it; only its Break meter does: parries and interrupts fill it, and a full meter stuns it for 3 seconds.
+- **Poise**: enemies only flinch when their poise breaks, and are then stagger immune for 5 seconds, so a group cannot stun-lock them.
 - **The Hollow Duelist**, an animated R6 swordsman with AI (`server/Duelist.luau`), to the right of the spawn. It walks to you and swings telegraphed combos: white-outlined slashes (block, parry or dodge) and, every third combo, a slow orange-outlined thrust (parry or dodge). It blocks some of your attacks from the front, rolls away when you pile on hits, and is staggered for 1.2 seconds when you parry it. When it dies, a new one steps up after 8 seconds.
 - **A training dummy** to the left of the spawn that measures your damage per second, shown as a multiple of Weapon Damage (the design's reference target is 4 x WD). It is an R6 figure that turns to face you but never fights back.
 
@@ -39,7 +40,7 @@ To build a place file without Studio running: `rojo build -o oathbound.rbxl`.
 
 ### Testing alone
 
-The boss is tuned for a group, so it will flatten one player. While playing, select **Workspace > Arena > Ashen Sentinel** and set its `DamageScale` attribute to something like `0.2`. To test with several players, use **Test > Clients and Servers** in Studio.
+The boss is tuned for a group, so it will flatten one player. While playing, select **Workspace > Ashen Sentinel** and set its `DamageScale` attribute to something like `0.2`. Set its `SetHealth` attribute to `0.55` to jump straight to phase 2. To test with several players, use **Test > Clients and Servers** in Studio.
 
 ## Controls (PC)
 

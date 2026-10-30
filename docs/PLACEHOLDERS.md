@@ -51,11 +51,26 @@ The attack pattern and hit sizes come from encounters E4 and E6 in the Build Sys
 | Value | Why it was needed |
 |---|---|
 | 600,000 HP | Aims at the GDD's 2 to 4 minute dungeon boss with about three players. |
-| Wind-ups: swing 0.8 s, buster 1.2 s, sweep 1.5 s | The GDD only says group wind-ups are at least 600 ms. |
-| Cone 14 studs and 100 degrees, sweep radius 18 studs | Shapes were not specified. |
+| Telegraphs: Cleave 0.8 / 0.6 / 0.65 s, Sundering Blow 1.4 s, Ash Leap 1.6 s, Ash Sweep 1.6 s, Cinder Ring 1.7 s, Ember Lines 1.3 s then 1.0 s | The GDD only says group wind-ups are at least 600 ms. |
+| Hit sizes: Cleave 7,000 per swing, Ash Leap 9,000, Cinder Ring 8,000, Ember Lines 7,000 | Written against light armor like the GDD's; only the buster, sweep and chant sizes come from the review. |
+| Shapes: Cleave cone 15 studs, 110 degrees; Sundering Blow 22 studs, 50 degrees; Leap circle 11; Sweep 18; Ring 8 to 30; Lines 64 by 7 | Shapes were not specified. |
+| Phase 2 at 60% HP: 2.5 s roar, chant every 30 s instead of 40, walk 19 studs/s instead of 15 | Two-phase fight requested in playtest; the GDD has no phase rules. |
+| Scaled R6 rig, 2.4x, with the vania Great Hammer and Cleric/Warden clips | Placeholder until real boss art and animations. |
+| Hyper armor: player hits never flinch it | Only the Break meter stops a boss (see Poise below). |
 | Break meter 100, parry +15, interrupt +30 | The GDD wants a 15 to 29 s fill time but gives no per-action values. |
 | Enrage doubles damage | The GDD gives the 10 minute enrage timer but not what it does. |
-| Moves at 12 studs/s, aggro 45, leash 90, resets after 8 s alone, respawns after 15 s | Arena behaviour only. |
+| Post at z = 130, aggro 35 (a ring on the floor), leash 90, resets after 8 s alone, respawns after 15 s | Arena behaviour only; far from the spawn so it is never pulled by accident. |
+
+## Poise (`server/Poise.luau`)
+
+Stops groups from stun-locking enemies. Player hits drain an enemy's poise instead of flinching it; only a poise break staggers it, and then it cannot be staggered again for a while.
+
+| Value | Why it was needed |
+|---|---|
+| Quick hit 10 poise, heavy (wind-up 0.6 s or more) 25, crits x1.5 | Feel values. |
+| Refills after 2.5 s without a hit | So poise breaks need focused pressure. |
+| 5 s stagger immunity after a stagger | The anti-stun-lock rule. Damage still lands in full. |
+| Hollow Duelist: poise 60, poise-break stagger 0.6 s; its thrust has hyper armor | About six quick hits from one player, faster with a group. |
 
 ## Left out on purpose
 

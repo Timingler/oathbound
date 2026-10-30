@@ -111,6 +111,17 @@ Rule for picks: Western medieval fantasy (knight, ranger, priest, rogue, noble);
 
 Bright white pieces are retinted to linen and wool. Weapons: 7 Warden swords, 6 Assassin daggers, 6 Cleric hammers, 6 Ranger bows; new models Camilla Sabre and Vamp Dagger 1 and 2 (vania), plus blackened and gilded finishes and two bow tints. Shields, tomes and quivers have no model in the cleared files, so those off-hands still show nothing.
 
+**Hotbar tools** are models in the place under `ServerStorage.OathTools` (save the place to keep them), each with a `Grip` attribute:
+
+| Tool | Source |
+|---|---|
+| pickaxe | vania `Workspace.Pickaxe`, retinted to wood and iron (its texture was a SurfaceAppearance, not copied) |
+| hatchet | vania `OffHand.Parry Axe` |
+| torch | the Parry Axe haft from vania plus a charred wrap; the flame and light come from server/Tools. vania's Rekindle brazier was tried and read as a goblet in the hand. |
+| fishingRod | none yet: the only rod is in the excluded FREE R6 Fishing System |
+
+**The Ashen Sentinel** (server/Boss) is an R6 rig scaled 2.4x wearing the Nightwatch Coat outfit, holding vania's Great Hammer with a blackened finish, animated with the Cleric and Warden clips (AssetIds.Combat.Boss).
+
 Rejected: vania Buckled Cloak (a skinned mesh that renders broken on R6), hxh Bandages and Excry Bronze Necklace (not visible on R6), vania Scarf 3 (a thin band), Gear Hammer (steampunk); the vania Boss Cloak (white veil), Warrior Chausses (oversized); haori, gi and hakama sets, bead necklaces (East Asian); Kurapika, Chrollo, Netero, Feitan outfits (named characters); farmer, bandit, waistcoat, suits, hoodies, jeans, graphic tees, kimono and tactical gear from the remaining Excry, hxh, REFramework and Anime Brigade clothing (modern, sci-fi or East Asian).
 
 No shields, tomes, quivers, boots or rings exist in the cleared files: head, ring and most off-hands are stats only.
