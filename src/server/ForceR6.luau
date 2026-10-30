@@ -8,6 +8,8 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local ForceR6 = {}
 
 function ForceR6.start()
+	-- Roblox's own Shift Lock would fight the game's camera lock toggle (client/Input), which also uses Shift.
+	StarterPlayer.EnableMouseLockOption = false
 	if not StarterPlayer:FindFirstChild("StarterCharacter") then
 		local rig = Players:CreateHumanoidModelFromDescription(Instance.new("HumanoidDescription"), Enum.HumanoidRigType.R6)
 		rig.Name = "StarterCharacter"

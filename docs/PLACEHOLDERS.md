@@ -83,3 +83,5 @@ These are in the design but have no defined values yet, so they are not built. I
 | Starter set: Common iL 65 in all 9 slots; bag of 18 random items, iL 60 to 72, one of each rarity guaranteed | `server/Inventory.luau` | Something to try on. Not saved between sessions. |
 | Item level = average of the 9 slots, empty slots count as 65 | `server/Inventory.luau` | Drives WD and HP through the existing formulas. |
 | No gear swaps until 5 s after the last hit | `server/Inventory.luau` | Same rule as switching class. |
+| Gear looks are plain parts (helmets, hoods, plate, robes, gauntlets, greaves, boots, amulets, rings, shields, tome, lantern, quiver), trim in the rarity colour | `server/Gear.luau` | Placeholders until real armour meshes exist. |
+| Class weapons: 5 swords, 3 daggers, 3 hammers from vania; bows are the same mesh in 4 stains | `shared/Items.luau`, `shared/WeaponLibrary.luau`, `server/Weapons.luau` | Variety to try on; not balanced against each other (only stats differ). |

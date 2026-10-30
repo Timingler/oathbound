@@ -47,12 +47,9 @@ local STANCE_FADE = 0.3
 
 local CAMERA_DISTANCE = 10 -- studs in front of the character [Proto]
 local CAMERA_HEIGHT = 0.6
+-- Movement is stopped by turning the character controls off (see Inventory.open); sinking held movement keys would
+-- leave the character walking. These are the action keys a menu should swallow.
 local BLOCKED_KEYS = {
-	Enum.KeyCode.W,
-	Enum.KeyCode.A,
-	Enum.KeyCode.S,
-	Enum.KeyCode.D,
-	Enum.KeyCode.Space,
 	Enum.KeyCode.Q,
 	Enum.KeyCode.E,
 	Enum.KeyCode.R,
@@ -250,6 +247,111 @@ local function ratingsOf(item): { [string]: number }
 end
 
 ----------------------------------------------------------------------------------------------------
+-- Glow: a white light around the part of the body (or the gear) an item sits on, like the reference menu. Soft
+-- while hovering, a bright flash and sparkles when it goes on.
+
+local SLOT_LIMBS = {
+	head = { "Head" },
+	chest = { "Torso" },
+	hands = { "Left Arm", "Right Arm" },
+	legs = { "Left Leg", "Right Leg" },
+	feet = { "Left Leg", "Right Leg" },
+	neck = { "Torso" },
+	ring = { "Right Arm" },
+	mainHand = { "Right Arm" },
+	offHand = { "Left Arm" },
+}
+local GLOW_COLOR = Color3.fromRGB(255, 250, 236)
+local glows: { Highlight } = {}
+
+local function clearGlow()
+	for _, h in glows do
+		h:Destroy()
+	end
+	table.clear(glows)
+end
+
+-- What lights up for `slot`: the gear built for it (server/Gear, server/Weapons), else the bare limbs.
+local function glowTargets(slot: string): { Instance }
+	local c = player.Character
+	if not c then
+		return {}
+	end
+	if slot == "mainHand" then
+		local weapon = c:FindFirstChild("OathWeapon")
+		if weapon and weaponShown then
+			return { weapon }
+		end
+	else
+		local gear = c:FindFirstChild("OathGear")
+		local model = gear and gear:FindFirstChild(slot)
+		if model then
+			return { model }
+		end
+	end
+	local list = {}
+	for _, name in SLOT_LIMBS[slot] or {} do
+		local part = c:FindFirstChild(name)
+		if part then
+			table.insert(list, part)
+		end
+	end
+	return list
+end
+
+local function firstPart(target: Instance): BasePart?
+	if target:IsA("BasePart") then
+		return target
+	end
+	return target:FindFirstChildWhichIsA("BasePart", true)
+end
+
+local function glow(slot: string, flash: boolean)
+	clearGlow()
+	for _, target in glowTargets(slot) do
+		local h = Instance.new("Highlight")
+		h.Adornee = target
+		h.FillColor = GLOW_COLOR
+		h.OutlineColor = GLOW_COLOR
+		h.DepthMode = Enum.HighlightDepthMode.Occluded
+		h.FillTransparency = 1
+		h.OutlineTransparency = 1
+		h.Parent = target
+		table.insert(glows, h)
+		if flash then
+			tween(h, { FillTransparency = 0.35, OutlineTransparency = 0 }, TweenInfo.new(0.12))
+			task.delay(0.15, function()
+				if h.Parent then
+					tween(h, { FillTransparency = 0.85, OutlineTransparency = 0.35 }, TweenInfo.new(0.6, Enum.EasingStyle.Quad))
+				end
+			end)
+			-- Sparkles off the piece.
+			local part = firstPart(target)
+			if part then
+				local sparks = Instance.new("ParticleEmitter")
+				sparks.Texture = "rbxasset://textures/particles/sparkles_main.dds"
+				sparks.Color = ColorSequence.new(GLOW_COLOR)
+				sparks.LightEmission = 1
+				sparks.Size = NumberSequence.new({ NumberSequenceKeypoint.new(0, 0.35), NumberSequenceKeypoint.new(1, 0) })
+				sparks.Lifetime = NumberRange.new(0.4, 0.8)
+				sparks.Speed = NumberRange.new(3, 6)
+				sparks.SpreadAngle = Vector2.new(180, 180)
+				sparks.Rate = 0
+				sparks.Parent = part
+				sparks:Emit(18)
+				task.delay(1, function()
+					sparks:Destroy()
+				end)
+			end
+		else
+			tween(h, { FillTransparency = 0.82, OutlineTransparency = 0.3 })
+		end
+	end
+end
+
+local pendingFlash: string? = nil -- slot to flash once the server has rebuilt its gear
+
+----------------------------------------------------------------------------------------------------
 -- Tooltip
 
 local function showTooltip(item)
@@ -273,6 +375,15 @@ local function showTooltip(item)
 	end
 	line({ Text = item.name, TextColor3 = rarity.color, TextSize = 18, FontFace = Theme.titleBold, Size = UDim2.new(1, 0, 0, 24) })
 	line({ Text = string.format("%s %s  ·  Item Level %d", rarity.name, slot.name, item.itemLevel), TextColor3 = Theme.textDim, TextSize = 12 })
+	if item.class then
+		local mine = data and data.stats and data.stats.className
+		line({
+			Text = item.class .. " only",
+			TextColor3 = if item.class == mine then Theme.textDim else Theme.bad,
+			TextSize = 12,
+			Font = Theme.bodyBold,
+		})
+	end
 	order += 1
 	make("Frame", { LayoutOrder = order, BackgroundColor3 = Theme.goldDim, BorderSizePixel = 0, Size = UDim2.new(1, 0, 0, 1), Parent = tip.Body })
 	if #item.modifiers == 0 then
@@ -310,12 +421,19 @@ local function showTooltip(item)
 		Font = Theme.bodyBold,
 	})
 	tip.Visible = true
+	-- Weapons come out of the relaxed pose while you look at one.
+	if item.slot == "mainHand" or item.slot == "offHand" then
+		stanceUntil = math.max(stanceUntil, os.clock() + 1.5)
+		updateStance()
+	end
+	glow(item.slot, false)
 end
 
 local function hideTooltip(item)
 	if hovered == item then
 		hovered = nil
 		ui.tooltip.Visible = false
+		clearGlow()
 	end
 end
 
@@ -466,6 +584,7 @@ local function card(item, order: number): Frame
 			remote:FireServer({ op = "unequip", slot = item.slot })
 		else
 			remote:FireServer({ op = "equip", uid = item.uid })
+			pendingFlash = item.slot
 			if Items.SLOT_BY_ID[item.slot].group == "weapon" then
 				stanceUntil = os.clock() + STANCE_AFTER_EQUIP
 			end
@@ -940,6 +1059,15 @@ end
 ----------------------------------------------------------------------------------------------------
 -- Open / close
 
+-- Roblox's default control module (PlayerModule), whose Disable() drops any held movement.
+local function playerControls(): any
+	local ok, controls = pcall(function()
+		local module = player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule", 2)
+		return module and (require(module) :: any):GetControls()
+	end)
+	return if ok then controls else nil
+end
+
 local function sinkKeys()
 	return Enum.ContextActionResult.Sink
 end
@@ -951,6 +1079,16 @@ function Inventory.open()
 	end
 	isOpen = true
 	player:SetAttribute("UiOpen", true)
+	-- Stop walking: a key held when the menu opens would otherwise keep the character moving out of frame.
+	local controls = playerControls()
+	if controls then
+		controls:Disable()
+	end
+	local humanoid = (player.Character :: Model):FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		humanoid:Move(Vector3.zero)
+	end
+	root.AssemblyLinearVelocity = Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
 	ContextActionService:BindActionAtPriority("OathInventoryBlock", sinkKeys, false, Enum.ContextActionPriority.High.Value + 50, table.unpack(BLOCKED_KEYS))
 	remote:FireServer({ op = "sync" })
 
@@ -978,7 +1116,13 @@ function Inventory.close()
 	end
 	isOpen = false
 	hovered = nil
+	pendingFlash = nil
+	clearGlow()
 	ui.tooltip.Visible = false
+	local controls = playerControls()
+	if controls then
+		controls:Enable()
+	end
 	gui.Enabled = false
 	player:SetAttribute("UiOpen", nil)
 	ContextActionService:UnbindAction("OathInventoryBlock")
@@ -1013,14 +1157,33 @@ function Inventory.start()
 		end
 		if isOpen then
 			render()
+			local slot = pendingFlash
+			pendingFlash = nil
+			if slot then
+				-- The server rebuilt the piece just before this; give the new parts a moment to arrive.
+				task.delay(0.12, function()
+					if isOpen then
+						glow(slot, true)
+					end
+				end)
+			end
 		end
 	end)
 	remote:FireServer({ op = "sync" })
 
-	ContextActionService:BindActionAtPriority("OathInventory", function(_, state)
-		if state == Enum.UserInputState.Begin then
-			Inventory.toggle()
+	-- I (or Tab) toggles it. Read straight from UserInputService so nothing else bound to the key, such as the
+	-- camera's keyboard zoom, can swallow it; ignored only while typing in a text box (chat).
+	UserInputService.InputBegan:Connect(function(input)
+		if input.KeyCode ~= Enum.KeyCode.I and input.KeyCode ~= Enum.KeyCode.Tab then
+			return
 		end
+		if UserInputService:GetFocusedTextBox() then
+			return
+		end
+		Inventory.toggle()
+	end)
+	-- Keep the camera from zooming on I while the key opens the menu.
+	ContextActionService:BindActionAtPriority("OathInventoryKey", function()
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.ContextActionPriority.High.Value + 60, Enum.KeyCode.I, Enum.KeyCode.Tab)
 

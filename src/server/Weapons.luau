@@ -2,6 +2,8 @@
 -- moves a "Hilt" part joined to the Right Arm, so the weapon is welded to a Hilt joined the same way. Like vania,
 -- a looping hold pose (AssetIds.Hold) keeps the arm up and the weapon in the hand between attacks.
 -- Weapon meshes and offsets are in shared/WeaponLibrary. R6 only.
+-- Which weapon a class holds comes from the player's equipped main-hand item (server/Inventory sets
+-- Weapons.variantFor); without one, the class default. The weapon is a Model so the inventory can highlight it.
 -- The Ranger's bow is the exception: it comes from the Bow & Arrow System kit, whose animations move a "RootPart"
 -- joined to the Left Arm, so the bow hangs off a part of that name in the left hand.
 
@@ -20,6 +22,19 @@ local HOLD_ATTRIBUTE = "WeaponHold" -- client/Locomotion leaves the standing pos
 local HOLD_FADE = 0.2 -- seconds [Proto]
 
 -- The bow, from the Bow & Arrow System kit's model: two meshes at fixed offsets from its RootPart.
+-- Bow looks: the same Bow & Arrow System meshes, stained differently [Proto].
+local BOW_TINTS = {
+	["Hunting Bow"] = Color3.fromRGB(106, 57, 9),
+	["Ashwood Longbow"] = Color3.fromRGB(196, 170, 128),
+	["Blackwood Recurve"] = Color3.fromRGB(44, 36, 34),
+	["Gilded Warbow"] = Color3.fromRGB(214, 176, 98),
+}
+
+-- Returns the equipped variant name for `character` as `className`, or nil. Set by server/Inventory.
+Weapons.variantFor = function(_character: Model, _className: string): string?
+	return nil
+end
+
 local BOW = {
 	color = Color3.fromRGB(106, 57, 9),
 	parts = {
@@ -99,7 +114,7 @@ end
 
 -- Builds the bow in `folder`: a RootPart joined to the Left Arm (the part the bow animations move) and the meshes
 -- welded to it.
-local function buildBow(folder: Folder, leftArm: BasePart)
+local function buildBow(folder: Model, leftArm: BasePart, color: Color3)
 	local root = Instance.new("Part")
 	root.Name = "RootPart" -- the bow animations' Pose name; must match
 	root.Size = Vector3.new(0.13, 0.13, 0.06)
@@ -127,7 +142,7 @@ local function buildBow(folder: Folder, leftArm: BasePart)
 		end
 		part.Name = partDef.name
 		part.Size = partDef.size
-		part.Color = BOW.color
+		part.Color = color
 		part.Material = Enum.Material.Wood
 		part.CanCollide = false
 		part.CanQuery = false
@@ -152,7 +167,8 @@ function Weapons.equip(character: Model, className: string)
 		old:Destroy()
 	end
 	hold(character, nil)
-	local def = WeaponLibrary[className]
+	local variant = Weapons.variantFor(character, className)
+	local def = (variant and WeaponLibrary[variant]) or WeaponLibrary[className]
 	local arm = character:WaitForChild("Right Arm", 10) :: BasePart?
 	local leftArm = character:WaitForChild("Left Arm", 10) :: BasePart?
 	if not arm or not leftArm then
@@ -167,9 +183,9 @@ function Weapons.equip(character: Model, className: string)
 		oldBow:Destroy()
 	end
 	if className == "Ranger" then
-		local folder = Instance.new("Folder")
+		local folder = Instance.new("Model")
 		folder.Name = FOLDER
-		buildBow(folder, leftArm)
+		buildBow(folder, leftArm, (variant and BOW_TINTS[variant]) or BOW.color)
 		if equips[character] ~= equip then
 			folder:Destroy()
 			return
@@ -182,7 +198,7 @@ function Weapons.equip(character: Model, className: string)
 		return
 	end
 
-	local folder = Instance.new("Folder")
+	local folder = Instance.new("Model")
 	folder.Name = FOLDER
 
 	local hilt = Instance.new("Part")
