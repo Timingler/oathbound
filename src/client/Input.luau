@@ -40,6 +40,9 @@ local lmbDownAt: number? = nil
 local heavySent = false
 
 local function send(kind: string, extra: { [string]: any }?)
+	if player:GetAttribute("UiOpen") then
+		return -- a full-screen menu (the inventory) has the mouse
+	end
 	local req = { kind = kind }
 	if extra then
 		for k, v in extra do
@@ -192,7 +195,9 @@ function Input.start()
 		UserInputService.MouseBehavior = mouseFree and Enum.MouseBehavior.Default or Enum.MouseBehavior.LockCenter
 		local root, humanoid = rootAndHumanoid()
 		local camera = workspace.CurrentCamera
-		if root and humanoid and camera and humanoid.Health > 0 then
+		if player:GetAttribute("UiOpen") then
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+		elseif root and humanoid and camera and humanoid.Health > 0 then
 			humanoid.AutoRotate = mouseFree
 			humanoid.CameraOffset = mouseFree and Vector3.zero or Vector3.new(1.75, 0, 0)
 			if not mouseFree then

@@ -52,6 +52,7 @@ The boss is tuned for a group, so it will flatten one player. While playing, sel
 | F | Ultimate (not built yet) |
 | 1, 2, 3 | Switch to Assassin, Cleric or Warden (out of combat) |
 | Left Alt | Free the mouse |
+| I or Tab | Inventory: hover an item to compare, click to equip, right-drag to turn the view |
 
 The camera works like shift lock: your character faces where you look.
 

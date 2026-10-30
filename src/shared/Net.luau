@@ -5,6 +5,7 @@ return {
 	ACTION = "Action", -- client -> server: input requests
 	STATE = "State", -- server -> client: HUD snapshot, about 10 per second
 	FX = "Fx", -- server -> client: hits, heals, log lines
+	INVENTORY = "Inventory", -- both ways: client sends { op = "sync" | "equip" | "unequip" | ... }, server sends the bag
 
 	-- Request kinds sent on ACTION
 	Request = {

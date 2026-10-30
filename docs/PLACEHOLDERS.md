@@ -49,7 +49,7 @@ These are in the design but have no defined values yet, so they are not built. I
 - Ultimates (no ultimate is designed for these three classes)
 - Mastery (no per-class effect is designed)
 - Cleric's Divine Grace and cleanses (cleanse effects are undefined)
-- Talents, gear and item modifiers (Phase 2)
+- Talents (Phase 2). Gear is in as a test bag; see Inventory below.
 - Revive charges and downed state (Phase 1 respawns you instead)
 - Position rewind for latency (the server checks range with slack instead)
 
@@ -60,3 +60,13 @@ These are in the design but have no defined values yet, so they are not built. I
 | Run animation from 20 studs/s, 0.2 s fades | `client/Locomotion.luau` | The prototype has no sprint yet, so at the default 16 studs/s the walk cycle plays. |
 | Combat animations stretched over wind-up + recovery, rate 0.5x to 3x; combo resets after 1.5 s | `server/Animations.luau` | The source animations have their own lengths; this keeps them in step with the timeline. |
 | Roll animation at 2x speed | `client/Input.luau` | The roll is 1.17 s long and the dodge lasts 0.3 s. |
+
+## Inventory
+
+| Value | Where | Why it was needed |
+|---|---|---|
+| Rarity ladder Common 0 to Legendary 4 modifiers, Unique 4 + an effect (effect text only, not simulated) | `shared/Items.luau` | GDD v2 gives the ladder but no stat ranges. |
+| Modifier rolls 100 to 260 rating at item level 65, +2% per item level | `shared/Items.luau`, `server/Inventory.luau` | K is about 1,182 at level 50, so one modifier is roughly 10 to 20% of a stat's ceiling. |
+| Starter set: Common iL 65 in all 9 slots; bag of 18 random items, iL 60 to 72, one of each rarity guaranteed | `server/Inventory.luau` | Something to try on. Not saved between sessions. |
+| Item level = average of the 9 slots, empty slots count as 65 | `server/Inventory.luau` | Drives WD and HP through the existing formulas. |
+| No gear swaps until 5 s after the last hit | `server/Inventory.luau` | Same rule as switching class. |

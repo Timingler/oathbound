@@ -95,6 +95,19 @@ function Actor:applyKit(kit, armorType: string?, maxHealth: number?)
 	self.dead = false
 end
 
+-- New gear: rebuilds stats, WD and max HP from the equipped ratings and item level, keeping the HP fraction.
+-- Unlike applyKit, it leaves resources, cooldowns and the timeline alone.
+function Actor:refreshGear(ratings: { [string]: number }, itemLevel: number)
+	local fraction = self.maxHealth > 0 and self.health / self.maxHealth or 1
+	self.ratings = ratings
+	self.itemLevel = itemLevel
+	self.stats = StatCurve.derive(self.ratings, self.level)
+	self.wd = Scaling.weaponDamage(self.level, self.itemLevel)
+	local roleBonus = self.isTank and Scaling.TANK_HP_BONUS or 0
+	self.maxHealth = Scaling.maxHealth(self.armorType, self.level, self.itemLevel, roleBonus) * (1 + self.stats.vitality)
+	self.health = self.maxHealth * fraction
+end
+
 function Actor:root(): BasePart?
 	local model = self.model
 	if not model or not model.Parent then

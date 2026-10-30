@@ -11,10 +11,12 @@ local Input = require(script.Input)
 local Hud = require(script.Hud)
 local Locomotion = require(script.Locomotion)
 local Effects = require(script.Effects)
+local Inventory = require(script.Inventory)
 
 Hud.start()
 Input.start()
 Locomotion.start()
+task.spawn(Inventory.start) -- waits for its remote
 
 -- The server plays the combat animations, but each client fetches an animation the first time it sees it, and a
 -- swing is over before the fetch is. Fetch them all now so the first swing of each one shows.
