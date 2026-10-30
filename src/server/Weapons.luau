@@ -182,8 +182,9 @@ function Weapons.stow(character: Model)
 end
 
 -- Removes any weapon and gives the character the one for `className`. Yields while the meshes load. While a tool
--- is out (server/Tools), the weapon stays put away.
-function Weapons.equip(character: Model, className: string)
+-- is out (server/Tools), the weapon stays put away. `variant` and `finish` pick the weapon instead of the inventory
+-- (the boss uses this).
+function Weapons.equip(character: Model, className: string, variant: string?, finish: { number }?)
 	if character:GetAttribute("HeldTool") then
 		Weapons.stow(character)
 		return
@@ -195,7 +196,9 @@ function Weapons.equip(character: Model, className: string)
 		old:Destroy()
 	end
 	hold(character, nil)
-	local variant, finish = Weapons.variantFor(character, className)
+	if not variant then
+		variant, finish = Weapons.variantFor(character, className)
+	end
 	local def = (variant and WeaponLibrary[variant]) or WeaponLibrary[className]
 	local arm = character:WaitForChild("Right Arm", 10) :: BasePart?
 	local leftArm = character:WaitForChild("Left Arm", 10) :: BasePart?

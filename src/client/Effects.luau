@@ -457,12 +457,27 @@ function Effects.onFx(event)
 			Effects.shake(SHAKE_TAKE)
 		end
 	elseif t == "bossAttack" then
-		if event.key == "sweep" then
-			Effects.vfx("slam", pos)
-			Effects.sfx("bossSlam", pos)
-		else
+		if event.key == "cleave" or event.key == "buster" then
 			Effects.sfx("bossSwing", pos)
+			if event.key == "buster" then
+				Effects.vfx("slam", pos)
+			end
+		else
+			-- Leap, sweep, ring, lines and the chant: the ground erupts.
+			Effects.vfx("slam", pos, math.clamp((event.radius or 10) / 8, 1, 4))
+			Effects.sfx("bossSlam", pos)
 		end
+		local me = localPlayer.Character and localPlayer.Character:FindFirstChild("HumanoidRootPart") :: BasePart?
+		if me and pos and (me.Position - pos).Magnitude < 45 then
+			Effects.shake(if event.key == "cleave" then 0.4 else 1)
+		end
+	elseif t == "bossTelegraph" then
+		Effects.sfx("swing", pos)
+	elseif t == "bossPhase" then
+		Effects.vfx("slam", pos, 4)
+		Effects.sfx("bossCast", pos)
+		Effects.sfx("bossSlam", pos)
+		Effects.shake(1.5)
 	elseif t == "broken" then
 		both("guardBreak", pos)
 	elseif t == "cast" then

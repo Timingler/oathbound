@@ -215,7 +215,7 @@ function Hud.onState(snap)
 
 	local boss = snap.boss
 	if boss and boss.engaged then
-		ui.bossName.Text = boss.name .. (boss.broken and "  BROKEN" or "") .. string.format("   enrage %d:%02d", math.floor(boss.enrage / 60), math.floor(boss.enrage % 60))
+		ui.bossName.Text = boss.name .. (boss.phase == 2 and "  (ignited)" or "") .. (boss.broken and "  BROKEN" or "") .. string.format("   enrage %d:%02d", math.floor(boss.enrage / 60), math.floor(boss.enrage % 60))
 		ui.bossHp(boss.hp, boss.maxHp, string.format("%s / %s (%.1f%%)", fmt(boss.hp), fmt(boss.maxHp), boss.hp / boss.maxHp * 100))
 		ui.bossBreak(boss.breakMeter, boss.breakMax, boss.breakLocked and "Break locked" or "Break")
 		if boss.cast then

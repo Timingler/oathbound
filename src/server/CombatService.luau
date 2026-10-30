@@ -16,6 +16,7 @@ local Scaling = require(Shared.Scaling)
 local Actor = require(script.Parent.Actor)
 local Abilities = require(script.Parent.Abilities)
 local Animations = require(script.Parent.Animations)
+local Poise = require(script.Parent.Poise)
 local Weapons = require(script.Parent.Weapons)
 local Projectiles = require(script.Parent.Projectiles)
 
@@ -239,7 +240,11 @@ function CombatService.strike(source, target, amount: number, def, isTick: boole
 	if not isTick then
 		Animations.hitStop(source, crit or (def.windup or 0) >= 0.6)
 		if not blocked then
-			Animations.hurt(target)
+			if Poise.uses(target) then
+				Poise.hit(target, source, def, crit, now) -- enemies flinch only when their poise breaks
+			else
+				Animations.hurt(target)
+			end
 		end
 	end
 end

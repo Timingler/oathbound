@@ -3,7 +3,7 @@
 -- Each animation is timed so its strike (AssetIds `hit`) lands as the wind-up ends, when the server applies the
 -- hit, and plays close to its authored speed. Stretching whole animations over wind-up plus recovery made fast
 -- actions look rushed and put the strike at the wrong moment.
--- R6 only (the animations are R6). Also plays for the Duelist NPCs; the boss is a part model and is not animated.
+-- R6 only (the animations are R6). Also plays for the Duelist NPCs and the boss (a scaled R6 rig).
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -29,7 +29,7 @@ local states: { [Model]: any } = setmetatable({}, { __mode = "k" }) :: any
 local combos: { [any]: { index: number, last: number } } = setmetatable({}, { __mode = "k" }) :: any
 
 local function stateFor(actor)
-	if (actor.kind ~= "player" and actor.kind ~= "npc") or not actor.model then
+	if (actor.kind ~= "player" and actor.kind ~= "npc" and actor.kind ~= "boss") or not actor.model then
 		return nil
 	end
 	local state = states[actor.model]
@@ -98,16 +98,31 @@ function Animations.action(actor, def, now: number)
 	end
 	-- Strike on the fire tick: rate * windup of animation time passes during the wind-up, ending at `hit`.
 	local windup = Formulas.actionTime(def.windup or 0, actor.stats.actionSpeed)
-	local rate, start = 1, 0
+	local rate, start, wait = 1, 0, 0
 	if entry.hit and windup > 0 then
 		rate = math.clamp(entry.hit / windup, MIN_RATE, MAX_RATE)
 		start = math.max(0, entry.hit - windup * rate)
+		if actor.kind == "boss" then
+			-- The boss's telegraphs are longer than its swings: it holds still, then swings so the strike still
+			-- lands on the fire tick. (A player's swing starts at once, so the input feels immediate.)
+			wait = math.max(0, windup - (entry.hit - start) / rate)
+		end
 	end
 	local t = track(state, entry, Enum.AnimationPriority.Action, false)
-	t:Play(FADE)
-	t.TimePosition = start
-	t:AdjustSpeed(rate)
 	state.action = t
+	local function play()
+		if state.action == t then
+			t:Play(FADE)
+			t.TimePosition = start
+			t:AdjustSpeed(rate)
+		end
+	end
+	if wait > 0 then
+		t:Stop(0)
+		task.delay(wait, play)
+	else
+		play()
+	end
 
 	-- A long draw (the Ranger's Aimed Shot): the release clip takes over so the string lets go on the fire tick.
 	-- A dodge or block in between stops the draw, which cancels the release.

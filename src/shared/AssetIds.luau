@@ -109,6 +109,18 @@ AssetIds.Combat = {
 		pierce = { id = 134782919099562, length = 0.67, hit = 0.67, release = { id = 71054802195595, length = 0.47, hit = 0.3 } },
 		volley = { id = 107887253067644, length = 0.75, hit = 0.5 },
 	},
+	-- The Ashen Sentinel (server/Boss), reusing the clips above on its scaled rig. The chant has no `hit`, so it
+	-- starts at once instead of waiting for a strike.
+	Boss = {
+		cleave1 = { id = 137789199869379, length = 0.75, hit = 0.4 },
+		cleave2 = { id = 122735676513005, length = 0.767, hit = 0.4 },
+		cleave3 = { id = 129012896652443, length = 0.75, hit = 0.4 },
+		buster = { id = 132114753474752, length = 1.383, hit = 1.27 }, -- Warden cleave: a big overhead
+		slam = { id = 72265550049226, length = 1.283, hit = 0.37 }, -- Cleric Sanctuary: hammer into the ground
+		leap = { id = 78513902446355, length = 0.95, hit = 0.7 }, -- Warden intercept: a lunge
+		lines = { id = 81443323768646, length = 0.983, hit = 0.33 }, -- Warden bash
+		chant = { id = 79522147824602, length = 1.65 }, -- Cleric Mend
+	},
 	Common = {
 		parry1 = { id = 92880082908381, length = 0.5 },
 		parry2 = { id = 81125391426221, length = 0.4 },
@@ -129,6 +141,7 @@ AssetIds.Hold = {
 	Assassin = 134201934974804, -- "Dagger idle"
 	Cleric = 92760080918876, -- "greatsword idle": vania has no hammer idle; this one rests the hammer on the shoulder
 	Ranger = 121372386174806, -- Bow & Arrow System "Bow Idle"
+	Boss = 92760080918876, -- the Cleric's: the hammer on the shoulder
 }
 
 -- Combat sounds from the vania, hxh and Excry places, played by client/Effects.luau. Short sound effects are public

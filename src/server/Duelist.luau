@@ -3,7 +3,8 @@
 -- Duelist mode: a swordsman with the Warden's sword, hold pose and combat animations. It walks to you, swings
 -- combos of white (block, parry or dodge) slashes, now and then a slow orange thrust (parry or dodge only),
 -- blocks some of your attacks from the front, rolls away when you pile on hits, and is staggered when you parry
--- it. It dies, falls apart, and a new one walks out of its post after a few seconds.
+-- it or break its poise (server/Poise; its thrust has hyper armor).
+-- It dies, falls apart, and a new one walks out of its post after a few seconds.
 --
 -- Passive mode: the training dummy. An R6 straw figure that turns to face the nearest player and never attacks
 -- or defends, so the DPS meter stays honest.
@@ -34,7 +35,7 @@ Duelist.WALK_SPEED = 14
 Duelist.RESPAWN = 8 -- seconds
 -- Hit sizes are written against light armor, like the boss's: an Assassin standing still dies in about 8 slashes.
 Duelist.SLASH = { id = "basic", name = "Duelist Slash", color = "white", written = 1100, windup = 0.5, recovery = 0.35, range = 7.5, degrees = 120 }
-Duelist.THRUST = { id = "cleave", name = "Duelist Thrust", color = "orange", written = 3000, windup = 0.9, recovery = 0.7, range = 9, degrees = 70 }
+Duelist.THRUST = { id = "cleave", name = "Duelist Thrust", color = "orange", written = 3000, windup = 0.9, recovery = 0.7, range = 9, degrees = 70, armor = true }
 Duelist.COMBO_MAX = 3 -- slashes in a row before it backs off
 Duelist.THRUST_EVERY = 3 -- combos; every third ends in a thrust
 Duelist.PAUSE = { 1.2, 2.2 } -- seconds between combos
@@ -46,6 +47,8 @@ Duelist.ROLL_COOLDOWN = 6
 Duelist.ROLL_SPEED = 38
 Duelist.ROLL_TIME = 0.35
 Duelist.STAGGER = 1.2 -- seconds helpless after you parry it
+Duelist.POISE = 60 -- about 6 quick hits; see server/Poise
+Duelist.POISE_STAGGER = 0.6 -- seconds helpless when its poise breaks
 Duelist.DUMMY_TURN = 0.15 -- passive mode: fraction of the way it turns to you per tick
 
 local TELEGRAPH = {
@@ -129,6 +132,13 @@ function Duelist.new(service, opts)
 	actor.onParried = function(_, parrier)
 		self:stagger(parrier)
 	end
+	if not self.passive then
+		actor.poiseMax = Duelist.POISE
+		actor.staggerTime = Duelist.POISE_STAGGER
+		actor.onPoiseBreak = function(_, source)
+			self:stagger(source, Duelist.POISE_STAGGER)
+		end
+	end
 	self:spawn()
 	service.addEnemy(actor)
 	table.insert(service.npcs, self)
@@ -168,6 +178,9 @@ function Duelist:spawn()
 	actor.dead = false
 	actor.blocking = false
 	actor.dodgeUntil = 0
+	actor.poise = actor.poiseMax
+	actor.staggerImmuneUntil = 0
+	actor.armoredUntil = 0
 	table.clear(actor.dots)
 	self.humanoid = humanoid
 	self.root = root
@@ -253,14 +266,16 @@ function Duelist:onDamaged(source)
 	end
 end
 
--- You parried it: the swing is lost and it is open for a moment.
-function Duelist:stagger(parrier)
+-- You parried it, or broke its poise: the swing is lost and it is open for a moment.
+function Duelist:stagger(source, duration: number?)
 	local now = self.service.now
 	self:endAction()
+	self.humanoid:Move(Vector3.zero)
+	self:setMove("Idle", 1)
 	self.state = "stagger"
-	self.stateEnds = now + Duelist.STAGGER
+	self.stateEnds = now + (duration or Duelist.STAGGER)
 	self.comboLeft = 0
-	self.service.fx({ t = "avoid", src = parrier.id, dst = self.actor.id, text = "Staggered", pos = self.actor:position() })
+	self.service.fx({ t = "avoid", src = source.id, dst = self.actor.id, text = "Staggered", pos = self.actor:position() })
 end
 
 function Duelist:endAction()
@@ -291,6 +306,7 @@ function Duelist:startAttack(attack, now: number)
 	self.attack = attack
 	self.state = "windup"
 	self.stateEnds = now + attack.windup
+	actor.armoredUntil = if attack.armor then now + attack.windup else 0 -- hyper armor: hits cannot stop it
 	self:setTelegraph(attack.color)
 	Animations.action(actor, attack, now)
 	self.service.fx({ t = "swing", src = actor.id, pos = actor:position() })

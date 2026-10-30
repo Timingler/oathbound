@@ -17,13 +17,13 @@ local bossActor = Actor.new({
 	kind = "boss",
 	name = "Ashen Sentinel",
 	team = "enemies",
-	model = arena.boss,
+	model = Boss.build(arena.bossPost),
 	level = 50,
 	itemLevel = 65,
 	maxHealth = Boss.MAX_HEALTH,
 })
 CombatService.addEnemy(bossActor)
-CombatService.boss = Boss.new(CombatService, bossActor, arena.bossHome)
+CombatService.boss = Boss.new(CombatService, bossActor, arena.bossPost)
 
 local dummy = Duelist.new(CombatService, { name = "Training Dummy", home = arena.dummyHome, passive = true })
 CombatService.dummy = dummy.actor
