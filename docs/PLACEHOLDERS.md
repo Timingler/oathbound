@@ -20,6 +20,7 @@ None of these have been playtested.
 
 | Value | Where | Why it was needed |
 |---|---|---|
+| Outfit set bonus: +60 rating to one stat when chest and legs share a palette (leather Action Speed, noble Critical Power, steel Vitality, hunter Critical Strike, dark Efficiency, priest Healing Power; neutral trousers none) | `Items.SET_BONUS` | Rewards outfits that look right together (playtest feedback). |
 | Mark lasts 10 s | `Kits/Assassin.luau` | The kit says basic attacks apply Mark, with no duration. |
 | Smoke Step usable during a dodge or up to 0.35 s after | `Kits/Assassin.luau` | The kit says "1.0 s untargetable after a dodge" but not how it is triggered. |
 | Heal range 40 studs | `Kits/Cleric.luau` | Not in the kit table. |

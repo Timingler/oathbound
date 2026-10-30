@@ -200,6 +200,11 @@ Items.ARMOR = {
 		{ name = "Tattered Wanderer's Trousers", pants = 2602453636, palette = "dark" },
 		{ name = "Templar Greaves", pants = 9793004800, palette = "priest" },
 		{ name = "Priest's Trousers", pants = 1670562937, palette = "priest" },
+		-- Plain trousers that go with any top (no set bonus).
+		{ name = "Black Trousers", pants = 5923167993, palette = "neutral" }, -- vania
+		{ name = "Tan Breeches", pants = 180349042, palette = "neutral" }, -- hxh
+		{ name = "Forest Trousers", pants = 5109838370, palette = "neutral" }, -- hxh
+		{ name = "Charcoal Trousers", pants = 10660925520, palette = "neutral" }, -- hxh
 	},
 	feet = {
 		{ name = "Soft Boots" },
@@ -224,6 +229,28 @@ Items.ARMOR = {
 		{ name = "Gilded Loop" },
 	},
 }
+
+-- Set bonus: chest and legs from the same palette add a flat rating to one stat that suits the look. [Proto]
+Items.SET_BONUS_RATING = 60
+Items.SET_BONUS = {
+	leather = "actionSpeed",
+	noble = "critEffect",
+	steel = "vitality",
+	hunter = "critChance",
+	dark = "efficiency",
+	priest = "healingPower",
+}
+
+-- The set bonus the worn chest and legs give: (palette, stat), or nil.
+function Items.setBonus(chest: Item?, legs: Item?): (string?, string?)
+	if chest and legs and chest.palette and chest.palette == legs.palette then
+		local stat = Items.SET_BONUS[chest.palette]
+		if stat then
+			return chest.palette, stat
+		end
+	end
+	return nil, nil
+end
 
 function Items.rarity(id: string)
 	return Items.RARITY_BY_ID[id] or Items.RARITIES[1]

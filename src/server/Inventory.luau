@@ -167,6 +167,11 @@ local function gearStats(inv: PlayerInv)
 			levels += BASE_ITEM_LEVEL
 		end
 	end
+	-- Matching chest and legs: the palette's set bonus.
+	local _, stat = Items.setBonus(inv.items[inv.equipped.chest or ""], inv.items[inv.equipped.legs or ""])
+	if stat then
+		ratings[stat] = (ratings[stat] or 0) + Items.SET_BONUS_RATING
+	end
 	return ratings, levels / #Items.SLOTS
 end
 
@@ -226,6 +231,10 @@ local function snapshot(player: Player, message: string?)
 			derived = actor.stats,
 			ratings = actor.ratings,
 		}
+		local palette, stat = Items.setBonus(inv.items[inv.equipped.chest or ""], inv.items[inv.equipped.legs or ""])
+		if stat then
+			stats.setBonus = { palette = palette, stat = stat, rating = Items.SET_BONUS_RATING }
+		end
 	end
 	remote:FireClient(player, { items = list, equipped = inv.equipped, stats = stats, message = message })
 end
