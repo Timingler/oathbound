@@ -326,7 +326,8 @@ function Duelist:roll(now: number)
 	table.clear(self.recentHits)
 	self.actor.dodgeUntil = now + Constants.DODGE_INVULN
 	self.rollTrack:Play(0.05)
-	self.rollTrack:AdjustSpeed(2)
+	self.rollTrack.TimePosition = 0.25 -- same timing as the player's roll in client/Input
+	self.rollTrack:AdjustSpeed(1.6)
 	self.service.fx({ t = "avoid", src = self.target.id, dst = self.actor.id, text = "Roll", pos = root.Position })
 
 	local attachment = Instance.new("Attachment")

@@ -59,47 +59,49 @@ AssetIds.BowSounds = {
 	Cancel = 111342790429258,
 }
 
--- Combat animations from the vania place (Cleric Mend from REFramework), keyed by kit and ability id. R6 only. `length` is in seconds, so the
--- server can stretch each one over the action's wind-up and recovery. basic = the 4-hit combo, played in turn.
+-- Combat animations from the vania place (Cleric Mend from REFramework), keyed by kit and ability id. R6 only.
+-- basic = the 4-hit combo, played in turn. `length` and `hit` are in seconds: `hit` is the strike, when the weapon
+-- moves fastest, measured by stepping each animation on a rig holding the class's weapon. server/Animations
+-- times the strike to land as the wind-up ends.
 AssetIds.Combat = {
 	Warden = {
 		basic = {
-			{ id = 103295286556261, length = 0.7 },
-			{ id = 136079389253694, length = 0.7 },
-			{ id = 119147741433206, length = 0.7 },
-			{ id = 81744799754944, length = 0.7 },
+			{ id = 103295286556261, length = 0.7, hit = 0.33 },
+			{ id = 136079389253694, length = 0.7, hit = 0.3 },
+			{ id = 119147741433206, length = 0.7, hit = 0.3 },
+			{ id = 81744799754944, length = 0.7, hit = 0.27 },
 		},
-		bash = { id = 81443323768646, length = 0.983 },
+		bash = { id = 81443323768646, length = 0.983, hit = 0.33 },
 		block = { id = 124711076243259, length = 0.3 },
-		cleave = { id = 132114753474752, length = 1.383 },
-		intercept = { id = 78513902446355, length = 0.95 },
+		cleave = { id = 132114753474752, length = 1.383, hit = 1.27 },
+		intercept = { id = 78513902446355, length = 0.95, hit = 0.7 },
 	},
 	Assassin = {
 		basic = {
-			{ id = 106658428162028, length = 0.7 },
-			{ id = 133080188391913, length = 0.7 },
-			{ id = 139000887992280, length = 0.7 },
-			{ id = 98167371563431, length = 0.7 },
+			{ id = 106658428162028, length = 0.7, hit = 0.27 },
+			{ id = 133080188391913, length = 0.7, hit = 0.33 },
+			{ id = 139000887992280, length = 0.7, hit = 0.27 },
+			{ id = 98167371563431, length = 0.7, hit = 0.33 },
 		},
-		backstab = { id = 124203937681949, length = 0.483 },
+		backstab = { id = 124203937681949, length = 0.483, hit = 0.17 },
 		block = { id = 89797086934236, length = 0.3 },
-		finisher = { id = 108220663192078, length = 1.083 },
-		poison = { id = 125562417023753, length = 1.5 },
+		finisher = { id = 108220663192078, length = 1.083, hit = 0.47 },
+		poison = { id = 125562417023753, length = 1.5, hit = 1.2 },
 	},
 	Cleric = {
 		basic = {
-			{ id = 137789199869379, length = 0.75 },
-			{ id = 122735676513005, length = 0.767 },
-			{ id = 129012896652443, length = 0.75 },
-			{ id = 122695545333172, length = 0.75 },
+			{ id = 137789199869379, length = 0.75, hit = 0.4 },
+			{ id = 122735676513005, length = 0.767, hit = 0.4 },
+			{ id = 129012896652443, length = 0.75, hit = 0.4 },
+			{ id = 122695545333172, length = 0.75, hit = 0.4 },
 		},
-		mend = { id = 79522147824602, length = 1.65 }, -- "Healing", from the REFramework place
-		sanctuary = { id = 72265550049226, length = 1.283 },
+		mend = { id = 79522147824602, length = 1.65, hit = 0.4 }, -- "Healing", from the REFramework place
+		sanctuary = { id = 72265550049226, length = 1.283, hit = 0.37 },
 	},
 	Common = {
 		parry1 = { id = 92880082908381, length = 0.5 },
 		parry2 = { id = 81125391426221, length = 0.4 },
-		roll = { id = 123385016461782, length = 1.167 },
+		roll = { id = 123385016461782, length = 1.167, hit = 0.73 },
 	},
 }
 

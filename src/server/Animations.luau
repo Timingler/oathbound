@@ -1,6 +1,8 @@
 -- Plays class combat animations on player characters. The server decides when an action starts, so it plays the
 -- animation too; tracks played through the character's Animator replicate to every client.
--- Each animation is stretched over the action's wind-up plus recovery, so it lines up with the timeline.
+-- Each animation is timed so its strike (AssetIds `hit`) lands as the wind-up ends, when the server applies the
+-- hit, and plays close to its authored speed. Stretching whole animations over wind-up plus recovery made fast
+-- actions look rushed and put the strike at the wrong moment.
 -- R6 only (the animations are R6). Also plays for the Duelist NPCs; the boss is a part model and is not animated.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -11,12 +13,15 @@ local Formulas = require(Shared.Formulas)
 
 local Animations = {}
 
-local FADE = 0.08 -- seconds [Proto]
+local FADE = 0.12 -- seconds [Proto]
 local COMBO_RESET = 1.5 -- seconds without a basic attack before the combo starts again at hit 1 [Proto]
-local MIN_RATE = 0.5
-local MAX_RATE = 1 -- never faster than authored: sped-up swings read as twitchy (playtest feedback) [Proto]
+-- Playback rate limits [Proto]. Below MIN_RATE an animation looks slow-motion. Never faster than authored: sped-up
+-- swings read as twitchy (playtest feedback). When the strike is too late for the wind-up even at MAX_RATE, the
+-- start of the animation (its anticipation) is skipped instead.
+local MIN_RATE = 0.75
+local MAX_RATE = 1
 
-type Entry = { id: number, length: number }
+type Entry = { id: number, length: number, hit: number? }
 
 -- Per character: loaded tracks, and what is playing now.
 local states: { [Model]: any } = setmetatable({}, { __mode = "k" }) :: any
@@ -91,12 +96,17 @@ function Animations.action(actor, def, now: number)
 	if state.action then
 		state.action:Stop(FADE)
 	end
-	local duration = Formulas.actionTime((def.windup or 0) + (def.recovery or 0), actor.stats.actionSpeed)
+	-- Strike on the fire tick: rate * windup of animation time passes during the wind-up, ending at `hit`.
+	local windup = Formulas.actionTime(def.windup or 0, actor.stats.actionSpeed)
+	local rate, start = 1, 0
+	if entry.hit and windup > 0 then
+		rate = math.clamp(entry.hit / windup, MIN_RATE, MAX_RATE)
+		start = math.max(0, entry.hit - windup * rate)
+	end
 	local t = track(state, entry, Enum.AnimationPriority.Action, false)
 	t:Play(FADE)
-	if duration > 0 then
-		t:AdjustSpeed(math.clamp(entry.length / duration, MIN_RATE, MAX_RATE))
-	end
+	t.TimePosition = start
+	t:AdjustSpeed(rate)
 	state.action = t
 end
 

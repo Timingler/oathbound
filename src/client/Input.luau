@@ -26,7 +26,10 @@ local R = Net.Request
 local HEAVY_HOLD = 0.25 -- seconds of holding left click before it counts as a heavy attack [Proto]
 local DODGE_SPEED = 55 -- studs per second [Proto]
 local DODGE_TIME = 0.3 -- seconds [Proto]
-local ROLL_ANIM_RATE = 2 -- the roll animation is 1.17 s; this plays it in about 0.6 s [Proto]
+-- The roll animation is 1.17 s with its tumble at 0.73 s. Skipping the crouch and playing the rest at 1.6x puts the
+-- tumble at 0.3 s, as the dodge movement ends. [Proto]
+local ROLL_ANIM_START = 0.25
+local ROLL_ANIM_RATE = 1.6
 
 local Input = {}
 
@@ -81,6 +84,7 @@ function Input.playDodge()
 			rollAnimator = animator
 		end
 		rollTrack:Play(0.05)
+		rollTrack.TimePosition = ROLL_ANIM_START
 		rollTrack:AdjustSpeed(ROLL_ANIM_RATE)
 	end
 
