@@ -764,20 +764,26 @@ local function build()
 	}, { make("UIListLayout", { Padding = UDim.new(0, 3), SortOrder = Enum.SortOrder.LayoutOrder }) })
 	ui.tooltip = tip
 
-	-- Hint while closed, bottom right of the HUD.
+	-- A button as well as the key, bottom right of the HUD: the I key never reaches the game while Studio's focus is
+	-- in another panel or a text box, and a click always works.
 	local hintGui = make("ScreenGui", { Name = "OathInventoryHint", ResetOnSpawn = false, Parent = player.PlayerGui })
-	text({
+	local hint = make("TextButton", {
 		Text = "[I]  Inventory",
 		TextColor3 = Theme.gold,
 		Font = Theme.bodyBold,
-		TextSize = 13,
-		TextStrokeTransparency = 0.5,
-		TextXAlignment = Enum.TextXAlignment.Right,
+		TextSize = 14,
+		BackgroundColor3 = Theme.panel,
+		BackgroundTransparency = 0.15,
+		AutoButtonColor = true,
 		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -16, 1, -12),
-		Size = UDim2.fromOffset(160, 18),
+		Position = UDim2.new(1, -16, 1, -14),
+		Size = UDim2.fromOffset(140, 32),
 		Parent = hintGui,
-	})
+	}, { corner(UDim.new(0, 6)), make("UIStroke", { Color = Theme.goldDim, Thickness = 1 }) })
+	hint.Activated:Connect(function()
+		Inventory.toggle()
+	end)
+	ui.hintGui = hintGui
 end
 
 ----------------------------------------------------------------------------------------------------
