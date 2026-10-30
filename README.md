@@ -52,10 +52,10 @@ The boss is tuned for a group, so it will flatten one player. While playing, sel
 | T | Signature key (Warden's Intercept) |
 | F | Ultimate (not built yet) |
 | 1, 2, 3 | Switch to Assassin, Cleric or Warden (out of combat) |
-| Left Alt | Free the mouse |
+| Left Shift or Left Ctrl | Toggle camera lock (off by default): hides the cursor and turns you with the camera |
 | I or Tab | Inventory: hover an item to compare, click to equip, right-drag to turn the view |
 
-The camera works like shift lock: your character faces where you look.
+With camera lock on, your character faces where you look; with it off, it faces where it moves.
 
 ## Tests
 

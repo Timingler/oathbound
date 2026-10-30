@@ -6,9 +6,10 @@
 --   T                       signature key (Warden Intercept)
 --   F                       ultimate (not built yet)
 --   1, 2, 3, 4              switch class out of combat [Proto]
---   Left Alt                free the mouse for the UI [Proto]
--- The camera works like shift lock: the mouse is locked to the centre and your character faces the camera,
--- so attacks go where you look.
+--   Left Shift or Left Ctrl toggle the camera lock [Proto]
+-- Camera lock is a toggle, like GPO or Vesteria: off (the default) is the normal Roblox camera with a free mouse
+-- and your character facing where it moves; on hides the cursor, shows a small crosshair and turns your character
+-- with the camera, so attacks go where you look.
 
 local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
@@ -35,7 +36,11 @@ local Input = {}
 
 local player = Players.LocalPlayer
 local actionRemote: RemoteEvent
-local mouseFree = false
+local mouseFree = true -- camera lock starts off
+local LOCK_KEYS = { [Enum.KeyCode.LeftShift] = true, [Enum.KeyCode.LeftControl] = true }
+local LOCK_OFFSET = Vector3.new(1.75, 0, 0) -- over-the-shoulder offset while locked
+local cameraOffset = Vector3.zero
+local crosshair: Frame? = nil
 local lmbDownAt: number? = nil
 local heavySent = false
 
@@ -151,9 +156,6 @@ function Input.start()
 	end)
 
 	bind("OathAttack", function(state)
-		if mouseFree then
-			return
-		end
 		if state == Enum.UserInputState.Begin then
 			lmbDownAt = os.clock()
 			heavySent = false
@@ -209,11 +211,34 @@ function Input.start()
 		return Enum.ContextActionResult.Sink
 	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four)
 
-	UserInputService.InputBegan:Connect(function(input)
-		if input.KeyCode == Enum.KeyCode.LeftAlt then
+	UserInputService.InputBegan:Connect(function(input, processed)
+		if LOCK_KEYS[input.KeyCode] and not processed and not player:GetAttribute("UiOpen") then
 			mouseFree = not mouseFree
 		end
 	end)
+
+	-- Small crosshair at the screen centre while locked, in place of the cursor.
+	local crossGui = Instance.new("ScreenGui")
+	crossGui.Name = "OathCrosshair"
+	crossGui.ResetOnSpawn = false
+	crossGui.IgnoreGuiInset = true
+	crossGui.Parent = player:WaitForChild("PlayerGui")
+	local dot = Instance.new("Frame")
+	dot.AnchorPoint = Vector2.new(0.5, 0.5)
+	dot.Position = UDim2.fromScale(0.5, 0.5)
+	dot.Size = UDim2.fromOffset(6, 6)
+	dot.BackgroundColor3 = Color3.fromRGB(240, 232, 214)
+	dot.BackgroundTransparency = 0.15
+	dot.BorderSizePixel = 0
+	dot.Visible = false
+	Instance.new("UICorner", dot).CornerRadius = UDim.new(1, 0)
+	local ring = Instance.new("UIStroke")
+	ring.Color = Color3.new(0, 0, 0)
+	ring.Transparency = 0.5
+	ring.Thickness = 1
+	ring.Parent = dot
+	dot.Parent = crossGui
+	crosshair = dot
 
 	-- Runs right after the default camera so our mouse lock is not overwritten.
 	RunService:BindToRenderStep("OathCamera", Enum.RenderPriority.Camera.Value + 1, function()
@@ -223,15 +248,21 @@ function Input.start()
 			send(R.HEAVY)
 		end
 
-		-- Shift-lock style camera.
-		UserInputService.MouseBehavior = mouseFree and Enum.MouseBehavior.Default or Enum.MouseBehavior.LockCenter
+		-- Camera lock (toggle). A menu that has the mouse (the inventory) overrides it.
+		local uiOpen = player:GetAttribute("UiOpen")
+		local locked = not mouseFree and not uiOpen
+		UserInputService.MouseBehavior = locked and Enum.MouseBehavior.LockCenter or Enum.MouseBehavior.Default
+		UserInputService.MouseIconEnabled = not locked
+		if crosshair then
+			crosshair.Visible = locked
+		end
 		local root, humanoid = rootAndHumanoid()
 		local camera = workspace.CurrentCamera
-		if player:GetAttribute("UiOpen") then
-			UserInputService.MouseBehavior = Enum.MouseBehavior.Default
-		elseif root and humanoid and camera and humanoid.Health > 0 then
+		if not uiOpen and root and humanoid and camera and humanoid.Health > 0 then
 			humanoid.AutoRotate = mouseFree
-			humanoid.CameraOffset = mouseFree and Vector3.zero or Vector3.new(1.75, 0, 0)
+			-- Ease the shoulder offset in and out instead of snapping.
+			cameraOffset = cameraOffset:Lerp(locked and LOCK_OFFSET or Vector3.zero, 0.25)
+			humanoid.CameraOffset = cameraOffset
 			if not mouseFree then
 				local look = camera.CFrame.LookVector
 				local flatLook = Vector3.new(look.X, 0, look.Z)
