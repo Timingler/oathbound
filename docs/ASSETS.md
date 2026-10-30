@@ -79,6 +79,33 @@ Looked at and rejected: Excry "manaimbue" (a crouched punch charge, not a heal),
 
 Fixed copies of all four kits, with the new IDs already swapped in, are in the project files under `oathbound/fixed-kits/`. Insert a `.rbxm` with Explorer > right-click > Insert from File.
 
+### Gear looks (2026-10-30)
+
+`server/Gear.luau` shows only real assets from the cleared places; the earlier part-built placeholders are gone. Rule for picks: Western medieval fantasy (knight, ranger, priest, rogue, noble); no East Asian garments, no modern wear, no oversized novelty pieces. Each pick was previewed on an R6 rig.
+
+**Meshes** live in the place, in `ServerStorage.OathGear` (rebuilt there from the source files, because SurfaceAppearance cannot be set up at runtime). Save the place to keep them. Each model is either an Accessory or groups of parts whose root carries `Limb`, `Offset` and optionally `Mirror`.
+
+| Look | Item | Source |
+|---|---|---|
+| warriorHelm | Warrior's Helm | vania Accesories.Head.Warrior Helmet |
+| fallenShroud | Fallen's Shroud | Excry Items.Accessories.FaceWear |
+| hxhHood | Wanderer's Hood | hxh Equipment.Head.Hood |
+| lostCrown | Lost Crown | vania Missions.Tasks.Lost Crown |
+| hunterRobe | Monster Hunter's Robe | vania StarterCharacterCMHR (robe and arm pieces) |
+| chestStrap | Strapped Jerkin | vania Accesories.Chest.Chest Strap |
+| leatherGauntlet | Leather Gauntlets | vania Accesories.Arms.Leather Gauntlet (both arms) |
+| warriorGreaves | Tasset Greaves | vania Accesories.Waist.Warrior Greaves |
+| goldNecklace, silverNecklace | Gold / Silver Necklace | Excry Items.Trinkets |
+| raggedScarf | Ragged Scarf | Excry Items.Accessories.Cape |
+| furCloak | Fur Mantle | vania Accesories.Neck.OldFur Cloak |
+| lantern | Lantern of Vigil (Cleric off-hand) | vania StarterCharacter thorns.Lantern |
+
+**Clothing** (Shirt / Pants templates, put on the character; the avatar's own come back when the slot is empty): vania Brown Trenchcoat (Wayfarer's), Imperial Captain (Vigil Captain's); Excry Klaus (Frostfur), Qix (Shadowleather), TheStranger (Wrapped Vest), NonDialogue set B (Templar); hxh Uvogin (Beastfur), Priest (Priest's Cassock / Trousers).
+
+Rejected: vania Farmer, Bandit, Formal Vest, Black and Navy Nobleman (modern suits); Imperial Recruit (a modern uniform); vania Boss Cloak (a huge white veil, out of place); Warrior Chausses (oversized on R6 legs); hxh character outfits (Kurapika, Chrollo, Netero, Feitan: costumes of specific characters), Cherry Blossom Haori, Armor1 gi, Excry NonDialogue set A (gi and hakama), Wooden and big Beads necklaces (East Asian); REFramework enemy rig (modern); the other Excry NonDialogue sets (modern or anime character wear).
+
+No shields, tomes, quivers, boots or rings exist in the cleared files, so those items change stats only. Every Warden, Assassin and Ranger off-hand is stats only for now.
+
 ## Rig type
 
 The run, wall run and bow animations are R6, the climb animations are R15. They cannot play on the other rig. The prototype forces R6 itself: `server/ForceR6.luau` puts an R6 StarterCharacter in StarterPlayer and dresses each character in the player's own avatar.

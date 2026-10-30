@@ -14,6 +14,8 @@ export type Item = {
 	modifiers: { Modifier },
 	unique: string?, -- text of the unique effect (not simulated yet)
 	look: string?, -- how it looks on the character (server/Gear), for armour and off-hands
+	shirt: number?, -- chest: Shirt template ID put on the character (server/Gear)
+	pants: number?, -- legs: Pants template ID
 	class: string?, -- weapons and off-hands: the only class that can equip it
 	model: string?, -- main-hand weapons: the WeaponLibrary key (or bow tint in server/Weapons) it shows as
 }
@@ -97,10 +99,10 @@ Items.CLASS_GEAR = {
 			{ name = "Rusted Sword", model = "Rusted Sword" },
 		},
 		offHand = {
-			{ name = "Heater Shield", look = "heater" },
-			{ name = "Kite Shield", look = "kite" },
-			{ name = "Tower Shield", look = "tower" },
-			{ name = "Round Buckler", look = "buckler" },
+			{ name = "Heater Shield" },
+			{ name = "Kite Shield" },
+			{ name = "Tower Shield" },
+			{ name = "Round Buckler" },
 		},
 	},
 	Assassin = {
@@ -111,8 +113,8 @@ Items.CLASS_GEAR = {
 			{ name = "Rusted Dagger", model = "Rusted Dagger" },
 		},
 		offHand = {
-			{ name = "Parrying Dagger", look = "parryDagger" },
-			{ name = "Smoke Pouch", look = "pouch" },
+			{ name = "Parrying Dagger" },
+			{ name = "Smoke Pouch" },
 		},
 	},
 	Cleric = {
@@ -123,9 +125,9 @@ Items.CLASS_GEAR = {
 			{ name = "Rusted Hammer", model = "Rusted Hammer" },
 		},
 		offHand = {
-			{ name = "Prayer Tome", look = "tome" },
-			{ name = "Lantern of Vigil", look = "lantern" },
-			{ name = "Pilgrim's Buckler", look = "buckler" },
+			{ name = "Lantern of Vigil", look = "lantern" }, -- the starter: the only off-hand with a real model
+			{ name = "Prayer Tome" },
+			{ name = "Pilgrim's Buckler" },
 		},
 	},
 	Ranger = {
@@ -137,56 +139,64 @@ Items.CLASS_GEAR = {
 			{ name = "Gilded Warbow", model = "Gilded Warbow" },
 		},
 		offHand = {
-			{ name = "Quiver", look = "quiver" },
-			{ name = "Hunter's Quiver", look = "quiverLarge" },
+			{ name = "Quiver" },
+			{ name = "Hunter's Quiver" },
 		},
 	},
 }
 
--- Armour names and looks per slot (server/Gear builds each look from parts). The first is the starter.
+-- Armour per slot. `look` names a model in ServerStorage.OathGear (server/Gear); `shirt` and `pants` are clothing
+-- template IDs. Every look is a real asset from the cleared places (docs/ASSETS.md); feet and rings have none yet,
+-- so they change stats only. The first of each list is the starter.
 Items.ARMOR = {
 	head = {
-		{ name = "Iron Helm", look = "helm" },
-		{ name = "Warden's Greathelm", look = "greathelm" },
-		{ name = "Hood of the Vigil", look = "hood" },
-		{ name = "Ashen Coif", look = "coif" },
-		{ name = "Circlet of Dawn", look = "circlet" },
+		{ name = "Warrior's Helm", look = "warriorHelm" }, -- vania
+		{ name = "Fallen's Shroud", look = "fallenShroud" }, -- Excry
+		{ name = "Wanderer's Hood", look = "hxhHood" }, -- hxh
+		{ name = "Lost Crown", look = "lostCrown" }, -- vania
 	},
 	chest = {
-		{ name = "Gambeson", look = "padded" },
-		{ name = "Oathsworn Hauberk", look = "plate" },
-		{ name = "Ember-Plate Cuirass", look = "plate" },
-		{ name = "Pilgrim's Robe", look = "robe" },
-		{ name = "Shadowweave Vest", look = "leather" },
+		{ name = "Wayfarer's Longcoat", shirt = 12898857876 }, -- vania
+		{ name = "Frostfur Hunter Coat", shirt = 4798579756 }, -- Excry
+		{ name = "Shadowleather Jerkin", shirt = 6523934418 }, -- Excry
+		{ name = "Wrapped Vest", shirt = 14945189243 }, -- Excry
+		{ name = "Templar Vestments", shirt = 9793008658 }, -- Excry
+		{ name = "Vigil Captain's Coat", shirt = 12898987440 }, -- vania
+		{ name = "Beastfur Vest", shirt = 513647064 }, -- hxh
+		{ name = "Priest's Cassock", shirt = 4299026991 }, -- hxh
+		{ name = "Monster Hunter's Robe", look = "hunterRobe", shirt = 6523934418 }, -- vania robe over leather
+		{ name = "Strapped Jerkin", look = "chestStrap", shirt = 14945189243 }, -- vania strap over wraps
 	},
 	hands = {
-		{ name = "Fingerless Wraps", look = "wraps" },
-		{ name = "Chain Gauntlets", look = "gauntlets" },
-		{ name = "Templar Gloves", look = "gloves" },
-		{ name = "Ashwood Bracers", look = "bracers" },
+		{ name = "Leather Gauntlets", look = "leatherGauntlet" }, -- vania
 	},
 	legs = {
-		{ name = "Wayfarer Trousers", look = "trousers" },
-		{ name = "Tasset Greaves", look = "greaves" },
-		{ name = "Scaled Leggings", look = "greaves" },
-		{ name = "Vigil Legguards", look = "legguards" },
+		{ name = "Wayfarer's Leggings", pants = 12898848920 }, -- vania
+		{ name = "Frostfur Leggings", pants = 4798577670 }, -- Excry
+		{ name = "Shadowleather Trousers", pants = 6522451827 }, -- Excry
+		{ name = "Templar Greaves", pants = 9793004800 }, -- Excry
+		{ name = "Vigil Captain's Breeches", pants = 12898979861 }, -- vania
+		{ name = "Beastfur Greaves", pants = 513647982 }, -- hxh
+		{ name = "Priest's Trousers", pants = 1670562937 }, -- hxh
+		{ name = "Tasset Greaves", look = "warriorGreaves", pants = 12898848920 }, -- vania
 	},
-	feet = {
-		{ name = "Soft Boots", look = "softBoots" },
-		{ name = "Iron Sabatons", look = "sabatons" },
-		{ name = "Marching Boots", look = "boots" },
-		{ name = "Ashen Treads", look = "boots" },
+	feet = { -- no boots in the cleared places yet: stats only
+		{ name = "Soft Boots" },
+		{ name = "Iron Sabatons" },
+		{ name = "Marching Boots" },
+		{ name = "Ashen Treads" },
 	},
 	neck = {
-		{ name = "Pilgrim's Token", look = "token" },
-		{ name = "Amulet of Embers", look = "amulet" },
-		{ name = "Oathstone Pendant", look = "amulet" },
+		{ name = "Gold Necklace", look = "goldNecklace" }, -- Excry
+		{ name = "Silver Necklace", look = "silverNecklace" }, -- Excry
+		{ name = "Ragged Scarf", look = "raggedScarf" }, -- Excry
+		{ name = "Fur Mantle", look = "furCloak" }, -- vania
 	},
-	ring = {
-		{ name = "Band of Ash", look = "ring" },
-		{ name = "Signet of the Warden", look = "ring" },
-		{ name = "Ring of Quiet Steps", look = "ring" },
-		{ name = "Gilded Loop", look = "ring" },
+	ring = { -- too small to show on an R6 hand: stats only
+		{ name = "Band of Ash" },
+		{ name = "Signet of the Warden" },
+		{ name = "Ring of Quiet Steps" },
+		{ name = "Gilded Loop" },
 	},
 }
 

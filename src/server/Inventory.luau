@@ -99,6 +99,8 @@ local function makeItem(
 		uid = tostring(inv.nextUid),
 		name = base.name,
 		look = base.look,
+		shirt = base.shirt,
+		pants = base.pants,
 		model = base.model,
 		class = classOfBase(slot, base),
 		slot = slot,
@@ -341,6 +343,11 @@ function Inventory.start(combatService)
 		inventories[player] = create(player)
 		-- A new character gets a fresh actor; put the gear back on it once CombatService has made it.
 		local function onCharacter(character: Model)
+			-- server/ForceR6 dresses the character in the avatar asynchronously, which replaces its clothing; put the
+			-- gear back once that is done.
+			character:GetAttributeChangedSignal("Dressed"):Connect(function()
+				applyTo(player, false)
+			end)
 			for _ = 1, 50 do
 				local actor = actorOf(player)
 				if actor and actor.model == character then

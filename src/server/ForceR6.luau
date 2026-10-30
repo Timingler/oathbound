@@ -25,10 +25,21 @@ function ForceR6.start()
 			return Players:GetHumanoidDescriptionFromUserIdAsync(math.max(player.UserId, 1))
 		end)
 		if ok and description then
+			-- Gear may already have put its Shirt and Pants on; clear them so only the avatar's own are left to
+			-- remember (an avatar without classic clothing would otherwise keep the gear's).
+			for _, clothing in character:GetChildren() do
+				if clothing:IsA("Shirt") or clothing:IsA("Pants") then
+					clothing:Destroy()
+				end
+			end
 			pcall(function()
 				humanoid:ApplyDescription(description)
 			end)
 		end
+		-- Dressing replaced the clothing; server/Gear re-reads the avatar's own and puts the gear back on top.
+		character:SetAttribute("OathShirt", nil)
+		character:SetAttribute("OathPants", nil)
+		character:SetAttribute("Dressed", true)
 	end
 
 	local function onPlayer(player: Player)

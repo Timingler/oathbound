@@ -1062,8 +1062,11 @@ end
 
 -- Roblox's default control module (PlayerModule), whose Disable() drops any held movement.
 local function playerControls(): any
+	-- Never waits: this place has no PlayerModule in PlayerScripts, and waiting for one held the freeze below back
+	-- by two seconds while the character kept running.
 	local ok, controls = pcall(function()
-		local module = player:WaitForChild("PlayerScripts"):WaitForChild("PlayerModule", 2)
+		local scripts = player:FindFirstChild("PlayerScripts")
+		local module = scripts and scripts:FindFirstChild("PlayerModule")
 		return module and (require(module) :: any):GetControls()
 	end)
 	return if ok then controls else nil
