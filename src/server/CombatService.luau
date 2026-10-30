@@ -26,6 +26,9 @@ CombatService.actors = {} :: { [number]: any }
 CombatService.byPlayer = {} :: { [Player]: any }
 CombatService.classOf = {} :: { [Player]: string }
 CombatService.boss = nil
+-- Hotbar hooks, set by server/Inventory: an attack with a tool out, and putting the tool away.
+CombatService.onToolUse = function(_actor) end
+CombatService.drawWeapon = function(_actor) end
 CombatService.dummy = nil
 CombatService.npcs = {} -- Duelists (and the dummy), stepped every tick
 CombatService.meters = {} -- training dummy meters: actor id -> { first, last, total }
@@ -491,6 +494,17 @@ local function handleRequest(actor, req)
 		actor.aimPoint = aim
 	else
 		actor.aimPoint = nil
+	end
+
+	-- A hotbar tool is out (server/Tools): attacks use the tool, and anything else that needs the weapon draws it
+	-- first. Block and dodge work either way.
+	if actor.player and actor.player:GetAttribute("HeldTool") then
+		if kind == R.BASIC or kind == R.HEAVY then
+			CombatService.onToolUse(actor)
+			return
+		elseif kind == R.SKILL or kind == R.SIGNATURE or kind == R.ULTIMATE or kind == R.AIM_START then
+			CombatService.drawWeapon(actor)
+		end
 	end
 
 	if kind == R.AIM_START then

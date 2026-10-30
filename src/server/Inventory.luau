@@ -14,6 +14,7 @@ local Net = require(Shared.Net)
 local Kits = require(Shared.Kits)
 local Gear = require(script.Parent.Gear)
 local Weapons = require(script.Parent.Weapons)
+local Tools = require(script.Parent.Tools)
 
 local Inventory = {}
 
@@ -30,7 +31,16 @@ local UNIQUE_EFFECTS = {
 -- Weighted rarity roll for the starter bag [Proto].
 local RARITY_WEIGHTS = { common = 30, uncommon = 28, rare = 20, epic = 12, legendary = 7, unique = 3 }
 
-type PlayerInv = { items: { [string]: Items.Item }, order: { string }, equipped: { [string]: string }, nextUid: number }
+-- hotbar[i] is "weapon" (the equipped main hand), a tool item's uid, or false when empty (false, not nil, so the
+-- array crosses the remote intact); active is the slot in hand.
+type PlayerInv = {
+	items: { [string]: Items.Item },
+	order: { string },
+	equipped: { [string]: string },
+	nextUid: number,
+	hotbar: { string | false },
+	active: number?,
+}
 
 local inventories: { [Player]: PlayerInv } = {}
 local service
@@ -127,7 +137,8 @@ local function currentClass(player: Player): string
 end
 
 local function create(player: Player): PlayerInv
-	local inv: PlayerInv = { items = {}, order = {}, equipped = {}, nextUid = 0 }
+	local inv: PlayerInv = { items = {}, order = {}, equipped = {}, nextUid = 0, hotbar = table.create(Items.HOTBAR_SIZE, false), active = 1 }
+	inv.hotbar[1] = "weapon"
 	local rng = Random.new(player.UserId + os.time())
 	local className = currentClass(player)
 	-- A Common starter armour set, equipped, and every class's starter weapon and off-hand; yours equipped.
@@ -145,6 +156,23 @@ local function create(player: Player): PlayerInv
 			if name == className then
 				inv.equipped[slot] = item.uid
 			end
+		end
+	end
+	-- One of each utility tool, on the hotbar after the weapon.
+	for i, tool in Items.TOOLS do
+		inv.nextUid += 1
+		local item = {
+			uid = tostring(inv.nextUid),
+			name = tool.name,
+			slot = "tool",
+			tool = tool.id,
+			rarity = "common",
+			itemLevel = BASE_ITEM_LEVEL,
+			modifiers = {},
+		}
+		add(inv, item)
+		if i + 1 <= Items.HOTBAR_SIZE then
+			inv.hotbar[i + 1] = item.uid
 		end
 	end
 	-- Loot to try on: one of each rarity first so every colour shows, then random.
@@ -231,7 +259,15 @@ local function snapshot(player: Player, message: string?)
 			ratings = actor.ratings,
 		}
 	end
-	remote:FireClient(player, { items = list, equipped = inv.equipped, stats = stats, message = message })
+	remote:FireClient(player, {
+		items = list,
+		equipped = inv.equipped,
+		stats = stats,
+		message = message,
+		hotbar = inv.hotbar,
+		hotbarSize = Items.HOTBAR_SIZE,
+		active = inv.active,
+	})
 end
 
 -- After a class switch: weapons and off-hands of another class come off, and the best of the new class's go on.
@@ -264,12 +300,128 @@ local function inCombat(actor): boolean
 	return actor ~= nil and service.now - actor.lastCombat < COMBAT_TIMEOUT
 end
 
+----------------------------------------------------------------------------------------------------
+-- Hotbar
+
+local function find(inv: PlayerInv, entry: string): number?
+	for i = 1, Items.HOTBAR_SIZE do
+		if inv.hotbar[i] == entry then
+			return i
+		end
+	end
+	return nil
+end
+
+local function toolOf(inv: PlayerInv, entry: string | false | nil)
+	local item = entry and entry ~= "weapon" and inv.items[entry]
+	return item and item.tool and item or nil
+end
+
+-- Puts slot `index` in the hand: the weapon, or a tool with the weapon put away.
+local function selectSlot(player: Player, inv: PlayerInv, index: number)
+	local character = player.Character
+	local actor = actorOf(player)
+	if not character or not actor or actor.model ~= character then
+		return
+	end
+	local tool = toolOf(inv, inv.hotbar[index])
+	local wasTool = Tools.held(character)
+	inv.active = index
+	if tool then
+		if wasTool ~= tool.tool then
+			actor.timeline:cancel()
+			actor.blocking = false
+			Tools.hold(player, character, tool.tool)
+		end
+	elseif wasTool then
+		Tools.hold(player, character, nil, actor.kit and actor.kit.id)
+	end
+end
+
+-- Back to the weapon: its hotbar slot if it has one, else no slot lit.
+local function drawWeapon(player: Player, inv: PlayerInv)
+	local index = find(inv, "weapon")
+	if index then
+		selectSlot(player, inv, index)
+	else
+		inv.active = nil
+		local character = player.Character
+		local actor = actorOf(player)
+		if character and Tools.held(character) then
+			Tools.hold(player, character, nil, actor and actor.kit and actor.kit.id)
+		end
+	end
+end
+
+local function handleHotbar(player: Player, inv: PlayerInv, req): boolean
+	local index = req.slot
+	if typeof(index) ~= "number" or index % 1 ~= 0 or index < 1 or index > Items.HOTBAR_SIZE then
+		return false
+	end
+	if req.op == "hotbarSelect" then
+		local entry = inv.hotbar[index]
+		if not entry then
+			return true
+		end
+		-- Pressing the key of the tool in your hand puts it away.
+		if inv.active == index and toolOf(inv, entry) then
+			drawWeapon(player, inv)
+		else
+			selectSlot(player, inv, index)
+		end
+		return true
+	elseif req.op == "hotbarSet" then
+		local entry: string? = nil
+		if typeof(req.uid) == "string" then
+			local item = inv.items[req.uid]
+			if not item then
+				return true
+			end
+			if item.tool then
+				entry = item.uid
+			elseif item.slot == "mainHand" then
+				entry = "weapon" -- the slot always holds whatever main hand is equipped
+			else
+				snapshot(player, "Only weapons and tools go on the hotbar")
+				return true
+			end
+		end
+		-- One slot per entry: moving it frees where it was.
+		local from = entry and find(inv, entry)
+		local displaced = inv.hotbar[index]
+		inv.hotbar[index] = entry or false
+		if from and from ~= index then
+			inv.hotbar[from] = displaced -- swap
+			if inv.active == from then
+				inv.active = index
+			elseif inv.active == index then
+				inv.active = from
+			end
+		end
+		-- The slot in hand changed under you: take out whatever it holds now.
+		if inv.active == index then
+			if entry then
+				selectSlot(player, inv, index)
+			else
+				drawWeapon(player, inv)
+			end
+		end
+		return true
+	end
+	return false
+end
+
 local function handle(player: Player, req)
 	local inv = inventories[player]
 	if not inv or typeof(req) ~= "table" then
 		return
 	end
 	if req.op == "sync" then
+		snapshot(player)
+		return
+	end
+	-- The hotbar works in combat: it changes what is in your hand, not your gear.
+	if handleHotbar(player, inv, req) then
 		snapshot(player)
 		return
 	end
@@ -281,8 +433,8 @@ local function handle(player: Player, req)
 	local mainBefore = inv.equipped.mainHand
 	if req.op == "equip" and typeof(req.uid) == "string" then
 		local item = inv.items[req.uid]
-		if not item then
-			return
+		if not item or item.tool then
+			return -- tools go on the hotbar instead
 		end
 		if item.class and item.class ~= currentClass(player) then
 			snapshot(player, string.format("Only a %s can use %s", item.class, item.name))
@@ -326,6 +478,24 @@ function Inventory.start(combatService)
 		end
 		return nil
 	end
+	service.drawWeapon = function(actor)
+		local inv = actor.player and inventories[actor.player]
+		if inv then
+			drawWeapon(actor.player, inv)
+			snapshot(actor.player)
+		end
+	end
+	service.onToolUse = function(actor)
+		local tool = Items.TOOL_BY_ID[actor.player:GetAttribute("HeldTool")]
+		if not tool then
+			return
+		end
+		if tool.verb then
+			service.log(actor, string.format("%s: no %s to %s here yet", tool.name, tool.target, tool.verb))
+		else
+			service.log(actor, tool.name .. ": press its key again to put it away")
+		end
+	end
 	local folder = ReplicatedStorage:WaitForChild(Net.FOLDER)
 	remote = Instance.new("RemoteEvent")
 	remote.Name = Net.INVENTORY
@@ -348,6 +518,12 @@ function Inventory.start(combatService)
 		inventories[player] = create(player)
 		-- A new character gets a fresh actor; put the gear back on it once CombatService has made it.
 		local function onCharacter(character: Model)
+			-- A new character starts with the weapon out.
+			player:SetAttribute("HeldTool", nil)
+			local inv = inventories[player]
+			if inv then
+				inv.active = find(inv, "weapon")
+			end
 			-- server/ForceR6 dresses the character in the avatar asynchronously, which replaces its clothing; put the
 			-- gear back once that is done.
 			character:GetAttributeChangedSignal("Dressed"):Connect(function()

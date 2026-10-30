@@ -43,6 +43,7 @@ local hiddenParts: { [BasePart]: number } = {} -- weapon part -> its transparenc
 local stanceUntil = 0 -- weapon hold stays out until this clock time after equipping a weapon
 
 local updateStance: () -> () -- defined with the pose helpers below; render() calls it
+local toast: (message: string) -> () -- defined with the layout below; bag cards call it
 local STANCE_AFTER_EQUIP = 4 -- seconds [Proto]
 local STANCE_FADE = 0.3
 
@@ -56,10 +57,10 @@ local BLOCKED_KEYS = {
 	Enum.KeyCode.R,
 	Enum.KeyCode.T,
 	Enum.KeyCode.F,
-	Enum.KeyCode.One,
-	Enum.KeyCode.Two,
-	Enum.KeyCode.Three,
-	Enum.KeyCode.Four,
+	Enum.KeyCode.F1,
+	Enum.KeyCode.F2,
+	Enum.KeyCode.F3,
+	Enum.KeyCode.F4,
 }
 
 ----------------------------------------------------------------------------------------------------
@@ -415,8 +416,11 @@ local function showTooltip(item)
 			end
 		end
 	end
+	if item.tool or item.slot == "mainHand" then
+		line({ Text = "Press 1 to 5 to put it on your hotbar", TextColor3 = Theme.textDim, TextSize = 12 })
+	end
 	line({
-		Text = if isEquipped(item) then "Click to take off" else "Click to equip",
+		Text = if item.tool then "Click to add to your hotbar" elseif isEquipped(item) then "Click to take off" else "Click to equip",
 		TextColor3 = Theme.gold,
 		TextSize = 12,
 		Font = Theme.bodyBold,
@@ -581,6 +585,22 @@ local function card(item, order: number): Frame
 		hideTooltip(item)
 	end)
 	c.Activated:Connect(function()
+		if item.tool then
+			-- Tools have no equipment slot: clicking one puts it in the first free hotbar slot.
+			local hotbar = data and data.hotbar or {}
+			if table.find(hotbar, item.uid) then
+				toast(item.name .. " is already on your hotbar")
+				return
+			end
+			for i = 1, data and data.hotbarSize or 0 do
+				if not hotbar[i] then
+					remote:FireServer({ op = "hotbarSet", slot = i, uid = item.uid })
+					return
+				end
+			end
+			toast("Hotbar full: hover it and press 1 to 5 to replace a slot")
+			return
+		end
 		if isEquipped(item) then
 			remote:FireServer({ op = "unequip", slot = item.slot })
 		else
@@ -592,6 +612,11 @@ local function card(item, order: number): Frame
 		end
 	end)
 	return c
+end
+
+-- The bag item under the mouse, for client/Hotbar's "hover and press a number" assignment.
+function Inventory.hovered()
+	return if isOpen then hovered else nil
 end
 
 local function renderBag()
@@ -637,7 +662,7 @@ local function render()
 	updateStance()
 end
 
-local function toast(message: string)
+toast = function(message: string)
 	ui.toast.Text = message
 	ui.toast.TextTransparency = 0
 	ui.toast.Visible = true

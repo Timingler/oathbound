@@ -160,8 +160,34 @@ local function buildBow(folder: Model, leftArm: BasePart, color: Color3)
 	end
 end
 
--- Removes any weapon and gives the character the one for `className`. Yields while the meshes load.
+-- Puts the weapon away: no weapon in the hand and no hold pose. A tool from the hotbar takes its place
+-- (server/Tools); an equip still loading is dropped.
+function Weapons.stow(character: Model)
+	equips[character] = (equips[character] or 0) + 1
+	local old = character:FindFirstChild(FOLDER)
+	if old then
+		old:Destroy()
+	end
+	hold(character, nil)
+	local arm = character:FindFirstChild("Right Arm")
+	local leftArm = character:FindFirstChild("Left Arm")
+	local oldHilt = arm and arm:FindFirstChild("WHilt")
+	if oldHilt then
+		oldHilt:Destroy()
+	end
+	local oldBow = leftArm and leftArm:FindFirstChild("WBow")
+	if oldBow then
+		oldBow:Destroy()
+	end
+end
+
+-- Removes any weapon and gives the character the one for `className`. Yields while the meshes load. While a tool
+-- is out (server/Tools), the weapon stays put away.
 function Weapons.equip(character: Model, className: string)
+	if character:GetAttribute("HeldTool") then
+		Weapons.stow(character)
+		return
+	end
 	local equip = (equips[character] or 0) + 1
 	equips[character] = equip
 	local old = character:FindFirstChild(FOLDER)

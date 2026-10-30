@@ -51,9 +51,10 @@ The boss is tuned for a group, so it will flatten one player. While playing, sel
 | Q, E, R | Skills |
 | T | Signature key (Warden's Intercept) |
 | F | Ultimate (not built yet) |
-| 1, 2, 3 | Switch to Assassin, Cleric or Warden (out of combat) |
+| F1 to F4 | Switch to Assassin, Cleric, Warden or Ranger (out of combat) |
+| 1 to 5 | Hotbar: take out what is in that slot (your weapon, or a tool like the pickaxe or torch). Press a tool's key again to put it away; skills draw the weapon on their own |
 | Left Shift or Left Ctrl | Toggle camera lock (off by default): hides the cursor and turns you with the camera |
-| I or Tab | Inventory: hover an item to compare (the piece glows on your character), click to equip, right-drag to turn the view. Gear shows on your character; weapons and off-hands are per class |
+| I or Tab | Inventory: hover an item to compare (the piece glows on your character), click to equip, right-drag to turn the view. Gear shows on your character; weapons and off-hands are per class. Hover a weapon or tool and press 1 to 5 to put it on the hotbar; right-click a hotbar slot to empty it |
 
 With camera lock on, your character faces where you look; with it off, it faces where it moves.
 

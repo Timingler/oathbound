@@ -79,15 +79,15 @@ function Hud.start()
 	ui.bossCast = bar(gui, UDim2.new(0.5, -150, 0, 78), UDim2.fromOffset(300, 16), Color3.fromRGB(150, 90, 220))
 	ui.warning = label(gui, { Position = UDim2.new(0.5, -300, 0, 100), Size = UDim2.fromOffset(600, 34), Font = Enum.Font.GothamBlack, TextSize = 26 })
 
-	-- You, bottom centre
-	ui.hp = bar(gui, UDim2.new(0.5, -200, 1, -150), UDim2.fromOffset(400, 22), Color3.fromRGB(60, 180, 80))
-	ui.res = bar(gui, UDim2.new(0.5, -200, 1, -124), UDim2.fromOffset(400, 14), Color3.fromRGB(240, 210, 80))
-	ui.stamina = bar(gui, UDim2.new(0.5, -200, 1, -106), UDim2.fromOffset(400, 8), Color3.fromRGB(120, 170, 230))
-	ui.state = label(gui, { Position = UDim2.new(0.5, -200, 1, -176), Size = UDim2.fromOffset(400, 20) })
+	-- You, bottom centre, above the hotbar (client/Hotbar)
+	ui.hp = bar(gui, UDim2.new(0.5, -200, 1, -234), UDim2.fromOffset(400, 22), Color3.fromRGB(60, 180, 80))
+	ui.res = bar(gui, UDim2.new(0.5, -200, 1, -208), UDim2.fromOffset(400, 14), Color3.fromRGB(240, 210, 80))
+	ui.stamina = bar(gui, UDim2.new(0.5, -200, 1, -190), UDim2.fromOffset(400, 8), Color3.fromRGB(120, 170, 230))
+	ui.state = label(gui, { Position = UDim2.new(0.5, -200, 1, -260), Size = UDim2.fromOffset(400, 20) })
 	ui.slots = {}
 	for i, key in { "LMB", "Q", "E", "R", "T" } do
 		local box = frame(gui, {
-			Position = UDim2.new(0.5, -200 + (i - 1) * 82, 1, -92),
+			Position = UDim2.new(0.5, -200 + (i - 1) * 82, 1, -176),
 			Size = UDim2.fromOffset(76, 56),
 			BackgroundColor3 = Color3.fromRGB(30, 30, 36),
 			BackgroundTransparency = 0.15,
@@ -106,7 +106,7 @@ function Hud.start()
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextSize = 12,
 		TextWrapped = true,
-		Text = "LMB tap: basic   LMB hold: heavy\nRMB hold: block (first 200 ms parries)\nSpace: dodge   Q / E / R: skills\nT: Intercept (Warden)   F: ultimate (later)\n1 Assassin   2 Cleric   3 Warden   4 Ranger (out of combat)\nShift or Ctrl: toggle camera lock   I: inventory",
+		Text = "LMB tap: basic   LMB hold: heavy\nRMB hold: block (first 200 ms parries)\nSpace: dodge   Q / E / R: skills\nT: Intercept (Warden)   F: ultimate (later)\nF1 Assassin   F2 Cleric   F3 Warden   F4 Ranger (out of combat)\n1 to 5: hotbar   Shift or Ctrl: toggle camera lock   I: inventory",
 	})
 	ui.class = label(gui, { Position = UDim2.fromOffset(12, 36), Size = UDim2.fromOffset(330, 20), TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.GothamBold, TextSize = 16 })
 

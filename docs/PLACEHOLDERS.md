@@ -85,5 +85,6 @@ These are in the design but have no defined values yet, so they are not built. I
 | Starter set: Common iL 65 in all 9 slots; bag of 18 random items, iL 60 to 72, one of each rarity guaranteed | `server/Inventory.luau` | Something to try on. Not saved between sessions. |
 | Item level = average of the 9 slots, empty slots count as 65 | `server/Inventory.luau` | Drives WD and HP through the existing formulas. |
 | No gear swaps until 5 s after the last hit | `server/Inventory.luau` | Same rule as switching class. |
+| Hotbar: 5 slots, weapon in slot 1, then Miner's Pickaxe, Woodcutter's Hatchet, Fishing Rod and Torch. Tools do nothing yet but log a line; the torch gives light (range 22). No tool models until ServerStorage.OathTools has them | `shared/Items.luau`, `server/Tools.luau`, `client/Hotbar.luau` | Gathering is not designed yet. Hotbar changes work in combat; gear swaps do not. |
 | Gear looks are plain parts (helmets, hoods, plate, robes, gauntlets, greaves, boots, amulets, rings, shields, tome, lantern, quiver), trim in the rarity colour | `server/Gear.luau` | Placeholders until real armour meshes exist. |
 | Class weapons: 5 swords, 3 daggers, 3 hammers from vania; bows are the same mesh in 4 stains | `shared/Items.luau`, `shared/WeaponLibrary.luau`, `server/Weapons.luau` | Variety to try on; not balanced against each other (only stats differ). |

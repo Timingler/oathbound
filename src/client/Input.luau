@@ -370,13 +370,14 @@ function Input.start()
 		end
 	end, Enum.KeyCode.F)
 
-	local classKeys = { [Enum.KeyCode.One] = 1, [Enum.KeyCode.Two] = 2, [Enum.KeyCode.Three] = 3, [Enum.KeyCode.Four] = 4 }
+	-- Number keys belong to the hotbar (client/Hotbar), so the prototype's class switch moved to F1 to F4.
+	local classKeys = { [Enum.KeyCode.F1] = 1, [Enum.KeyCode.F2] = 2, [Enum.KeyCode.F3] = 3, [Enum.KeyCode.F4] = 4 }
 	ContextActionService:BindActionAtPriority("OathClass", function(_, state, input)
 		if state == Enum.UserInputState.Begin then
 			send(R.CLASS, { class = Kits.ORDER[classKeys[input.KeyCode]] })
 		end
 		return Enum.ContextActionResult.Sink
-	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four)
+	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.F1, Enum.KeyCode.F2, Enum.KeyCode.F3, Enum.KeyCode.F4)
 
 	UserInputService.InputBegan:Connect(function(input, processed)
 		if LOCK_KEYS[input.KeyCode] and not processed and not player:GetAttribute("UiOpen") then

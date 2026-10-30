@@ -20,6 +20,7 @@ export type Item = {
 	class: string?, -- weapons and off-hands: the only class that can equip it
 	model: string?, -- main-hand weapons: the WeaponLibrary key (or bow tint in server/Weapons) it shows as
 	finish: { number }?, -- main-hand weapons: RGB multipliers for a blackened or gilded variant of the model
+	tool: string?, -- utility tools: the Items.TOOLS id; they sit on the hotbar, not in an equipment slot
 }
 
 -- Equipment slots in the order the UI lists them.
@@ -38,6 +39,8 @@ for i, slot in Items.SLOTS do
 	slot.index = i
 	Items.SLOT_BY_ID[slot.id] = slot
 end
+-- Utility tools have a slot entry so the bag can list and sort them, but no equipment slot: they live on the hotbar.
+Items.SLOT_BY_ID.tool = { id = "tool", name = "Tool", icon = "⛏", group = "tool", index = #Items.SLOTS + 1 }
 
 -- Bag tabs: id = slot group, or "all".
 Items.TABS = {
@@ -45,7 +48,23 @@ Items.TABS = {
 	{ id = "weapon", name = "Weapons" },
 	{ id = "armor", name = "Armor" },
 	{ id = "jewelry", name = "Jewelry" },
+	{ id = "tool", name = "Tools" },
 }
+
+-- The hotbar (client/Hotbar, server/Inventory): number keys 1 to 5 pull out what is in each slot. "weapon" stands
+-- for your equipped main hand; any other entry is a tool. Tools are for activities like mining, so they are one key
+-- away instead of in a menu. Using one does nothing yet: gathering is not built [Proto].
+Items.HOTBAR_SIZE = 5
+Items.TOOLS = {
+	{ id = "pickaxe", name = "Miner's Pickaxe", icon = "⛏", verb = "mine", target = "ore" },
+	{ id = "hatchet", name = "Woodcutter's Hatchet", icon = "🪓", verb = "chop", target = "trees" },
+	{ id = "fishingRod", name = "Fishing Rod", icon = "🎣", verb = "fish", target = "water" },
+	{ id = "torch", name = "Torch", icon = "🔥", light = true },
+}
+Items.TOOL_BY_ID = {}
+for _, tool in Items.TOOLS do
+	Items.TOOL_BY_ID[tool.id] = tool
+end
 
 Items.RARITIES = {
 	{ id = "common", name = "Common", modifiers = 0, color = Color3.fromRGB(200, 196, 186) },

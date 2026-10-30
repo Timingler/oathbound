@@ -13,10 +13,12 @@ local Hud = require(script.Hud)
 local Locomotion = require(script.Locomotion)
 local Effects = require(script.Effects)
 local Inventory = require(script.Inventory)
+local Hotbar = require(script.Hotbar)
 
--- No Roblox player list: Tab opens the inventory instead.
+-- No Roblox player list (Tab opens the inventory instead) and no Roblox backpack (the hotbar replaces it).
 pcall(function()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 end)
 
 Hud.start()
@@ -24,6 +26,7 @@ Input.onPredictArrow = Effects.predictArrow
 Input.start()
 Locomotion.start()
 task.spawn(Inventory.start) -- waits for its remote
+task.spawn(Hotbar.start, Inventory.hovered) -- waits for the same remote
 
 -- The server plays the combat animations, but each client fetches an animation the first time it sees it, and a
 -- swing is over before the fetch is. Fetch them all now so the first swing of each one shows.
