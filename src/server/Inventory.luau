@@ -91,6 +91,9 @@ local function makeItem(
 		local stat = table.remove(pool, rng:NextInteger(1, #pool))
 		local roll = Items.STATS[stat].roll
 		local scale = 1 + 0.02 * (itemLevel - BASE_ITEM_LEVEL)
+		if slot == "body" then
+			scale *= Items.BODY_ROLL_SCALE -- one piece in place of chest and legs carries both budgets
+		end
 		table.insert(modifiers, { stat = stat, rating = math.floor(rng:NextInteger(roll[1], roll[2]) * scale) })
 	end
 	local base = pickBase(rng, slot, className, first)
@@ -101,7 +104,7 @@ local function makeItem(
 		look = base.look,
 		shirt = base.shirt,
 		pants = base.pants,
-		palette = base.palette,
+		tint = base.tint,
 		model = base.model,
 		class = classOfBase(slot, base),
 		slot = slot,
@@ -167,11 +170,6 @@ local function gearStats(inv: PlayerInv)
 			levels += BASE_ITEM_LEVEL
 		end
 	end
-	-- Matching chest and legs: the palette's set bonus.
-	local _, stat = Items.setBonus(inv.items[inv.equipped.chest or ""], inv.items[inv.equipped.legs or ""])
-	if stat then
-		ratings[stat] = (ratings[stat] or 0) + Items.SET_BONUS_RATING
-	end
 	return ratings, levels / #Items.SLOTS
 end
 
@@ -231,10 +229,6 @@ local function snapshot(player: Player, message: string?)
 			derived = actor.stats,
 			ratings = actor.ratings,
 		}
-		local palette, stat = Items.setBonus(inv.items[inv.equipped.chest or ""], inv.items[inv.equipped.legs or ""])
-		if stat then
-			stats.setBonus = { palette = palette, stat = stat, rating = Items.SET_BONUS_RATING }
-		end
 	end
 	remote:FireClient(player, { items = list, equipped = inv.equipped, stats = stats, message = message })
 end
@@ -311,22 +305,6 @@ local function handle(player: Player, req)
 				end
 			end
 			inv.equipped[slot.id] = best and best.uid or nil
-		end
-		-- Mixed outfits look wrong: wear the best legs in the chest's palette when there are any.
-		local chest = inv.items[inv.equipped.chest or ""]
-		if chest and chest.palette then
-			local best, bestScore = nil, -1
-			for _, item in inv.items do
-				if item.slot == "legs" and item.palette == chest.palette then
-					local score = Items.rarity(item.rarity).rank * 1000 + item.itemLevel
-					if score > bestScore then
-						best, bestScore = item, score
-					end
-				end
-			end
-			if best then
-				inv.equipped.legs = best.uid
-			end
 		end
 	else
 		return

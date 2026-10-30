@@ -14,9 +14,9 @@ export type Item = {
 	modifiers: { Modifier },
 	unique: string?, -- text of the unique effect (not simulated yet)
 	look: string?, -- how it looks on the character (server/Gear), for armour and off-hands
-	shirt: number?, -- chest: Shirt template ID put on the character (server/Gear)
-	pants: number?, -- legs: Pants template ID
-	palette: string?, -- chest and legs: the outfit set it belongs to
+	shirt: number?, -- body armour: Shirt template ID put on the character (server/Gear)
+	pants: number?, -- body armour: Pants template ID, always worn with its Shirt
+	tint: { number }?, -- body armour: RGB multiplied into the Shirt and Pants, so every outfit sits in one palette
 	class: string?, -- weapons and off-hands: the only class that can equip it
 	model: string?, -- main-hand weapons: the WeaponLibrary key (or bow tint in server/Weapons) it shows as
 }
@@ -24,9 +24,8 @@ export type Item = {
 -- Equipment slots in the order the UI lists them.
 Items.SLOTS = {
 	{ id = "head", name = "Head", icon = "⛑", group = "armor" },
-	{ id = "chest", name = "Chest", icon = "🥋", group = "armor" },
+	{ id = "body", name = "Body Armor", icon = "🥋", group = "armor" },
 	{ id = "hands", name = "Hands", icon = "🧤", group = "armor" },
-	{ id = "legs", name = "Legs", icon = "👖", group = "armor" },
 	{ id = "feet", name = "Feet", icon = "👢", group = "armor" },
 	{ id = "mainHand", name = "Main hand", icon = "⚔", group = "weapon" },
 	{ id = "offHand", name = "Off hand", icon = "🛡", group = "weapon" },
@@ -146,12 +145,19 @@ Items.CLASS_GEAR = {
 	},
 }
 
--- Armour per slot. Only worn clothing shows: chest items carry a Shirt template and legs items a Pants template
--- (server/Gear puts them on the character; the avatar's own come back when the slot is empty). Every outfit is a
--- matching Shirt and Pants set from one source, so chest and legs share a name and a `palette`; Equip best keeps
--- the legs in the chest's palette. Chest and legs are clothing only; small 3D pieces (gauntlets, Tasset Greaves on
--- the feet slot, necklaces, scarf, mantle) stay. Head and ring have no look for now: stats only.
--- Sources and the art rule are in docs/ASSETS.md. The first of each list is the starter.
+-- Armour per slot. Body Armor is a whole outfit: a matching Shirt and Pants from one source, always worn together
+-- (server/Gear), so the look never clashes. It carries the stat budget of a chest and legs piece: its modifier rolls
+-- are BODY_ROLL_SCALE times larger [Proto]. `tint` [Proto] grades every outfit into one muted Oathbound palette.
+-- The small pieces stay modular: gauntlets (hands), Tasset Greaves (feet), necklaces, scarf and mantle (neck).
+-- Head and ring have no look for now: stats only. Sources and the art rule are in docs/ASSETS.md. The first of each
+-- list is the starter.
+Items.BODY_ROLL_SCALE = 1.6
+
+-- The shared grade, slightly warm and dim, and stronger grades for outfits much brighter than the rest.
+local GRADE = { 232, 224, 212 }
+local GRADE_BRIGHT = { 200, 192, 180 } -- white trousers, white fur
+local GRADE_VIVID = { 185, 182, 190 } -- saturated blue plate
+
 Items.ARMOR = {
 	head = {
 		{ name = "Iron Helm" },
@@ -159,52 +165,29 @@ Items.ARMOR = {
 		{ name = "Traveller's Hood" },
 		{ name = "Circlet of Dawn" },
 	},
-	chest = {
-		{ name = "Wayfarer's Longcoat", shirt = 12898857876, palette = "leather" }, -- vania
-		{ name = "Vigil Captain's Coat", shirt = 12898987440, palette = "noble" }, -- vania
-		{ name = "Nobleman's Frock Coat", shirt = 12898946049, palette = "noble" }, -- vania
-		{ name = "Navy Nobleman's Coat", shirt = 12898960235, palette = "noble" }, -- vania
-		{ name = "Nightwatch Coat", shirt = 9963316538, palette = "noble" }, -- Excry
-		{ name = "Sapphire Plate", shirt = 6700094348, palette = "steel" }, -- vania
-		{ name = "Frostfur Hunter Coat", shirt = 4798579756, palette = "hunter" }, -- Excry
-		{ name = "Beastfur Vest", shirt = 513647064, palette = "hunter" }, -- hxh
-		{ name = "Shadowleather Jerkin", shirt = 6523934418, palette = "dark" }, -- Excry
-		{ name = "Wrapped Vest", shirt = 14945189243, palette = "dark" }, -- Excry
-		{ name = "Bandaged Leathers", shirt = 97795805, palette = "dark" }, -- Excry
-		{ name = "Gravecloth Tunic", shirt = 4644385653, palette = "dark" }, -- Excry
-		{ name = "Duskwalker Coat", shirt = 8721840456, palette = "dark" }, -- Excry
-		{ name = "Tattered Wanderer's Tunic", shirt = 2602452291, palette = "dark" }, -- Excry
-		{ name = "Templar Vestments", shirt = 9793008658, palette = "priest" }, -- Excry
-		{ name = "Priest's Cassock", shirt = 4299026991, palette = "priest" }, -- hxh
+	body = {
+		{ name = "Wayfarer's Garb", shirt = 12898857876, pants = 12898848920, tint = GRADE }, -- vania
+		{ name = "Vigil Captain's Uniform", shirt = 12898987440, pants = 12898979861, tint = GRADE }, -- vania
+		{ name = "Nobleman's Frock", shirt = 12898946049, pants = 12898939449, tint = GRADE_BRIGHT }, -- vania
+		{ name = "Navy Nobleman's Frock", shirt = 12898960235, pants = 12898956879, tint = GRADE_BRIGHT }, -- vania
+		{ name = "Nightwatch Coat", shirt = 9963316538, pants = 9962616226, tint = GRADE }, -- Excry
+		{ name = "Sapphire Plate", shirt = 6700094348, pants = 6700096491, tint = GRADE_VIVID }, -- vania
+		{ name = "Frostfur Hunter's Garb", shirt = 4798579756, pants = 4798577670, tint = GRADE_BRIGHT }, -- Excry
+		{ name = "Beastfur Harness", shirt = 513647064, pants = 513647982, tint = GRADE }, -- hxh
+		{ name = "Shadowleather Garb", shirt = 6523934418, pants = 6522451827, tint = GRADE }, -- Excry
+		{ name = "Wrapped Leathers", shirt = 14945189243, pants = 14945190355, tint = GRADE }, -- Excry
+		{ name = "Bandaged Leathers", shirt = 97795805, pants = 97795809, tint = GRADE }, -- Excry
+		{ name = "Gravecloth", shirt = 4644385653, pants = 4644385578, tint = GRADE }, -- Excry
+		{ name = "Duskwalker Coat", shirt = 8721840456, pants = 8721833084, tint = GRADE }, -- Excry
+		{ name = "Tattered Wanderer's Rags", shirt = 2602452291, pants = 2602453636, tint = GRADE }, -- Excry
+		{ name = "Templar Vestments", shirt = 9793008658, pants = 9793004800, tint = GRADE }, -- Excry
+		{ name = "Priest's Cassock", shirt = 4299026991, pants = 1670562937, tint = GRADE }, -- hxh
 	},
 	hands = {
-		{ name = "Leather Gauntlets", look = "leatherGauntlet" }, -- vania (small 3D pieces stay)
+		{ name = "Leather Gauntlets", look = "leatherGauntlet" }, -- vania
 		{ name = "Leather Gloves" },
 		{ name = "Chain Gauntlets" },
 		{ name = "Ashwood Bracers" },
-	},
-	legs = {
-		{ name = "Wayfarer's Leggings", pants = 12898848920, palette = "leather" },
-		{ name = "Vigil Captain's Breeches", pants = 12898979861, palette = "noble" },
-		{ name = "Nobleman's Breeches", pants = 12898939449, palette = "noble" },
-		{ name = "Navy Nobleman's Breeches", pants = 12898956879, palette = "noble" },
-		{ name = "Nightwatch Trousers", pants = 9962616226, palette = "noble" },
-		{ name = "Sapphire Greaves", pants = 6700096491, palette = "steel" },
-		{ name = "Frostfur Leggings", pants = 4798577670, palette = "hunter" },
-		{ name = "Beastfur Greaves", pants = 513647982, palette = "hunter" },
-		{ name = "Shadowleather Trousers", pants = 6522451827, palette = "dark" },
-		{ name = "Wrapped Trousers", pants = 14945190355, palette = "dark" },
-		{ name = "Bandaged Trousers", pants = 97795809, palette = "dark" },
-		{ name = "Gravecloth Trousers", pants = 4644385578, palette = "dark" },
-		{ name = "Duskwalker Trousers", pants = 8721833084, palette = "dark" },
-		{ name = "Tattered Wanderer's Trousers", pants = 2602453636, palette = "dark" },
-		{ name = "Templar Greaves", pants = 9793004800, palette = "priest" },
-		{ name = "Priest's Trousers", pants = 1670562937, palette = "priest" },
-		-- Plain trousers that go with any top (no set bonus).
-		{ name = "Black Trousers", pants = 5923167993, palette = "neutral" }, -- vania
-		{ name = "Tan Breeches", pants = 180349042, palette = "neutral" }, -- hxh
-		{ name = "Forest Trousers", pants = 5109838370, palette = "neutral" }, -- hxh
-		{ name = "Charcoal Trousers", pants = 10660925520, palette = "neutral" }, -- hxh
 	},
 	feet = {
 		{ name = "Soft Boots" },
@@ -229,28 +212,6 @@ Items.ARMOR = {
 		{ name = "Gilded Loop" },
 	},
 }
-
--- Set bonus: chest and legs from the same palette add a flat rating to one stat that suits the look. [Proto]
-Items.SET_BONUS_RATING = 60
-Items.SET_BONUS = {
-	leather = "actionSpeed",
-	noble = "critEffect",
-	steel = "vitality",
-	hunter = "critChance",
-	dark = "efficiency",
-	priest = "healingPower",
-}
-
--- The set bonus the worn chest and legs give: (palette, stat), or nil.
-function Items.setBonus(chest: Item?, legs: Item?): (string?, string?)
-	if chest and legs and chest.palette and chest.palette == legs.palette then
-		local stat = Items.SET_BONUS[chest.palette]
-		if stat then
-			return chest.palette, stat
-		end
-	end
-	return nil, nil
-end
 
 function Items.rarity(id: string)
 	return Items.RARITY_BY_ID[id] or Items.RARITIES[1]

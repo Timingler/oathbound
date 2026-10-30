@@ -253,9 +253,8 @@ end
 
 local SLOT_LIMBS = {
 	head = { "Head" },
-	chest = { "Torso" },
+	body = { "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg" },
 	hands = { "Left Arm", "Right Arm" },
-	legs = { "Left Leg", "Right Leg" },
 	feet = { "Left Leg", "Right Leg" },
 	neck = { "Torso" },
 	ring = { "Right Arm" },
@@ -397,37 +396,6 @@ local function showTooltip(item)
 		line({ Text = item.unique, TextColor3 = Items.rarity("unique").color, TextSize = 13, TextWrapped = true, Size = UDim2.new(1, 0, 0, 34), Font = Enum.Font.GothamMedium })
 	end
 
-	-- Outfit sets: chest and legs of one palette look right together and give a set bonus.
-	if item.palette and (item.slot == "chest" or item.slot == "legs") then
-		local otherSlot = if item.slot == "chest" then "legs" else "chest"
-		local other = equippedIn(otherSlot)
-		local stat = Items.SET_BONUS[item.palette]
-		if stat then
-			line({
-				Text = string.format("Set bonus (%s chest + legs): +%d %s", item.palette, Items.SET_BONUS_RATING, Items.statName(stat)),
-				TextColor3 = Theme.gold,
-				TextSize = 12,
-			})
-		else
-			line({ Text = "Plain: goes with any outfit", TextColor3 = Theme.textDim, TextSize = 12 })
-		end
-		if stat and other and other.palette ~= item.palette and other.palette ~= "neutral" then
-			local matches = {}
-			for _, it in data.items do
-				if it.slot == otherSlot and it.palette == item.palette then
-					table.insert(matches, it.name)
-				end
-			end
-			line({
-				Text = "Mismatched with your " .. other.name .. (if #matches > 0 then ". Completes the set: " .. table.concat(matches, ", ") else ""),
-				TextColor3 = Theme.bad,
-				TextSize = 12,
-				TextWrapped = true,
-				Size = UDim2.new(1, 0, 0, 30),
-			})
-		end
-	end
-
 	-- Compare with the item worn in the same slot.
 	local worn = equippedIn(item.slot)
 	if worn and worn.uid ~= item.uid then
@@ -520,11 +488,6 @@ local function renderStats()
 		{ "Regeneration", pct(d.regeneration or 0) },
 		{ "Vitality", pct(d.vitality or 0) },
 	}
-	local bonus = s.setBonus
-	table.insert(rows, {
-		"Set bonus",
-		if bonus then string.format("+%d %s", bonus.rating, Items.statName(bonus.stat)) else "none",
-	})
 	for i, r in rows do
 		local f = make("Frame", { LayoutOrder = i, BackgroundTransparency = 1, Size = UDim2.new(0.5, -4, 0, 17), Parent = list })
 		text({ Text = r[1], TextColor3 = Theme.textDim, TextSize = 12, Size = UDim2.fromScale(0.62, 1), Parent = f })

@@ -1,5 +1,5 @@
 -- How equipped gear looks on the character. Only real assets from the cleared places, no placeholders:
---   * Clothing: chest items carry a Shirt template and legs items a Pants template, put on the character's Shirt and
+--   * Clothing: Body Armor carries a matching Shirt and Pants template (and a tint), put on the character's Shirt and
 --     Pants. The player's own avatar clothing comes back when the slot is empty.
 --   * Meshes: helmets, hoods, cloaks, gauntlets, greaves, necklaces and the lantern are models in
 --     ServerStorage.OathGear (rebuilt from vania, Excry and hxh; see docs/ASSETS.md), cloned and welded to the R6 limbs.
@@ -152,7 +152,7 @@ end
 -- Shirt or Pants: the item's template, or the avatar's own when the slot is empty. The avatar's templates are
 -- remembered on the character the first time ("" when it had none); server/ForceR6 clears them after it dresses
 -- the character, so they are read again from the avatar.
-local function setClothing(character: Model, className: string, templateProp: string, template: number?)
+local function setClothing(character: Model, className: string, templateProp: string, template: number?, tint: { number }?)
 	local attr = "Oath" .. className
 	local clothing = character:FindFirstChildOfClass(className) :: any
 	if character:GetAttribute(attr) == nil then
@@ -170,6 +170,8 @@ local function setClothing(character: Model, className: string, templateProp: st
 		clothing.Parent = character
 	end
 	clothing[templateProp] = wanted
+	-- The outfit's grade (Items.ARMOR), or no tint on the avatar's own clothing.
+	clothing.Color3 = if template and tint then Color3.fromRGB(tint[1], tint[2], tint[3]) else Color3.new(1, 1, 1)
 end
 
 -- Rebuilds every gear look on `character` from `equipped` (slot id -> item). Main hands are left to server/Weapons.
@@ -193,9 +195,10 @@ function Gear.apply(character: Model, equipped: { [string]: any })
 			end
 		end
 	end
-	local chest, legs = equipped.chest, equipped.legs
-	setClothing(character, "Shirt", "ShirtTemplate", chest and chest.shirt)
-	setClothing(character, "Pants", "PantsTemplate", legs and legs.pants)
+	-- Body Armor is a whole outfit: its Shirt and Pants always go on together.
+	local body = equipped.body
+	setClothing(character, "Shirt", "ShirtTemplate", body and body.shirt, body and body.tint)
+	setClothing(character, "Pants", "PantsTemplate", body and body.pants, body and body.tint)
 	setHeadwearHidden(character, coveredHead)
 end
 

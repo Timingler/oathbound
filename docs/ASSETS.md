@@ -83,25 +83,21 @@ Fixed copies of all four kits, with the new IDs already swapped in, are in the p
 
 Rule for picks: Western medieval fantasy (knight, ranger, priest, rogue, noble); no modern wear, no East Asian garments, no named-character costumes, nothing oversized. Every pick was previewed on an R6 rig.
 
-**Chest and legs are worn clothing only** (Shirt / Pants templates, applied by `server/Gear.luau`; the avatar's own clothing returns when the slot is empty). Each outfit is a matching set from one source with a `palette`; Equip best keeps the legs in the chest's palette.
+**Body Armor is one worn outfit** (Shirt and Pants templates, applied together by `server/Gear.luau`; the avatar's own clothing returns when the slot is empty). Chest and legs used to be separate slots, but outfits from different games mix art styles and clashed when combined, so each outfit is now one item with the stat budget of both (rolls x1.6). A light tint [Proto] grades every outfit into one muted palette.
 
-| Outfit | Palette | Source |
-|---|---|---|
-| Wayfarer's (starter) | leather | vania NPC Brown Trenchcoat |
-| Vigil Captain's | noble | vania Imperial Captain |
-| Nobleman's, Navy Nobleman's | noble | vania Black / Navy Nobleman |
-| Nightwatch | noble | Excry NonDialogue clothing |
-| Sapphire Plate / Greaves | steel | vania Workspace.Map.blackstar52905 |
-| Frostfur | hunter | Excry Klaus |
-| Beastfur | hunter | hxh Uvogin |
-| Shadowleather | dark | Excry Qix |
-| Wrapped | dark | Excry TheStranger |
-| Bandaged | dark | Excry NpcTemplate |
-| Gravecloth, Duskwalker, Tattered Wanderer's | dark | Excry NonDialogue clothing |
-| Templar | priest | Excry NonDialogue clothing |
-| Priest's | priest | hxh Priest |
-
-Full sets per palette: leather 1, noble 4, steel 1, hunter 2, dark 6, priest 2.
+| Outfit | Source |
+|---|---|
+| Wayfarer's Garb (starter) | vania NPC Brown Trenchcoat |
+| Vigil Captain's Uniform | vania Imperial Captain |
+| Nobleman's Frock, Navy Nobleman's Frock | vania Black / Navy Nobleman |
+| Nightwatch Coat, Gravecloth, Duskwalker Coat, Tattered Wanderer's Rags, Templar Vestments | Excry NonDialogue clothing |
+| Sapphire Plate | vania Workspace.Map.blackstar52905 |
+| Frostfur Hunter's Garb | Excry Klaus |
+| Beastfur Harness | hxh Uvogin |
+| Shadowleather Garb | Excry Qix |
+| Wrapped Leathers | Excry TheStranger |
+| Bandaged Leathers | Excry NpcTemplate |
+| Priest's Cassock | hxh Priest |
 
 **Small 3D pieces** stay, as models in the place under `ServerStorage.OathGear` (save the place to keep them): Leather Gauntlets (hands, vania), Tasset Greaves (feet slot, vania Warrior Greaves), Gold and Silver Necklace and Ragged Scarf (neck, Excry), Fur Mantle (neck, vania OldFur Cloak), Lantern of Vigil (Cleric off-hand, vania). Helmets, hoods and the crown are removed for now; their models are unused in OathGear.
 
