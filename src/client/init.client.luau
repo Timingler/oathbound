@@ -19,6 +19,7 @@ local Traversal = require(script.Traversal)
 local Dialogue = require(script.Dialogue)
 local LockOn = require(script.LockOn)
 local Footsteps = require(script.Footsteps)
+local StaminaBar = require(script.StaminaBar)
 
 -- No Roblox player list (Tab opens the inventory instead) and no Roblox backpack (the hotbar replaces it).
 pcall(function()
@@ -36,6 +37,7 @@ task.spawn(Dialogue.start) -- waits for its remotes
 LockOn.start()
 Footsteps.setShake(Effects.shake)
 Footsteps.start()
+StaminaBar.start()
 task.spawn(Inventory.start) -- waits for its remote
 task.spawn(Hotbar.start, Inventory.hovered) -- waits for the same remote
 
@@ -74,5 +76,6 @@ local fxRemote = remotes:WaitForChild(Net.FX) :: RemoteEvent
 stateRemote.OnClientEvent:Connect(Hud.onState)
 stateRemote.OnClientEvent:Connect(Sprint.onState)
 stateRemote.OnClientEvent:Connect(Traversal.onState)
+stateRemote.OnClientEvent:Connect(StaminaBar.onState)
 fxRemote.OnClientEvent:Connect(Hud.onFx)
 fxRemote.OnClientEvent:Connect(Effects.onFx)

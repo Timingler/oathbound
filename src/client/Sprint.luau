@@ -61,6 +61,11 @@ local function start()
 	actionRemote:FireServer({ kind = R.EXERT_START, mode = "sprint" })
 end
 
+-- Stops the sprint here without telling the server (it ends sprints itself on attacks, blocks and aims).
+function Sprint.cancel()
+	stop(false)
+end
+
 function Sprint.isSprinting(): boolean
 	return sprinting
 end

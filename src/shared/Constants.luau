@@ -23,6 +23,7 @@ Constants.STAMINA_REGEN = 20 -- per second while not blocking
 Constants.STAMINA_PER_BLOCK = 15
 
 -- Movement [Proto]: sprint, climb and glide share the stamina pool with blocking.
+Constants.ANIM_FADE = 0.2 -- seconds; one crossfade for walk, run, climb, glide and tool holds so they blend alike
 Constants.WALK_SPEED = 16 -- studs per second (Roblox default)
 Constants.SPRINT_SPEED = 24
 Constants.CLIMB_SPEED = 8

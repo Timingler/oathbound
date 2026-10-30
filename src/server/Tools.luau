@@ -9,6 +9,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Items = require(Shared.Items)
+local Constants = require(Shared.Constants)
 local Weapons = require(script.Parent.Weapons)
 
 local Tools = {}
@@ -39,7 +40,7 @@ local function clear(character: Model)
 	end
 	local track = holdTracks[character]
 	if track then
-		track:Stop(0.15)
+		track:Stop(Constants.ANIM_FADE)
 		holdTracks[character] = nil
 	end
 end
@@ -55,7 +56,7 @@ local function playHold(character: Model)
 	local track = animator:LoadAnimation(animation)
 	track.Priority = Enum.AnimationPriority.Action
 	track.Looped = true
-	track:Play(0.15)
+	track:Play(Constants.ANIM_FADE)
 	holdTracks[character] = track
 end
 

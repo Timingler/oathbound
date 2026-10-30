@@ -18,6 +18,11 @@ AssetIds.Move = {
 	["Run D"] = 110563591852153,
 }
 
+-- Hotbar tools (client/Input): the pickaxe and hatchet swing, reusing the Cleric's first hammer swing from vania.
+AssetIds.Tools = {
+	swing = { id = 137789199869379, length = 0.75, hit = 0.4 },
+}
+
 -- Climbing and the cloak glide (client/Traversal). R6.
 AssetIds.Traversal = {
 	Climb = 180436334, -- Roblox's own R6 climb (from the default Animate script; plays in any game)

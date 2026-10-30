@@ -11,8 +11,9 @@ local RunService = game:GetService("RunService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local AssetIds = require(Shared.AssetIds)
+local Constants = require(Shared.Constants)
 
-local FADE = 0.2 -- seconds [Proto]
+local FADE = Constants.ANIM_FADE
 local MOVING = 0.5 -- studs per second below which the character counts as standing still
 local RUN_FROM = 20 -- studs per second; the prototype walks at 16 and has no sprint yet [Proto]
 -- Speeds the kit's walk and run cycles were authored for, and its playback rate limits.
@@ -32,6 +33,7 @@ local OFF_GROUND = {
 	[Enum.HumanoidStateType.FallingDown] = true,
 	[Enum.HumanoidStateType.Ragdoll] = true,
 	[Enum.HumanoidStateType.Physics] = true,
+	[Enum.HumanoidStateType.PlatformStanding] = true, -- climbing and the mantle (client/Traversal)
 	[Enum.HumanoidStateType.Dead] = true,
 }
 
@@ -78,7 +80,7 @@ local function setup(character: Model)
 	end
 
 	local connection = RunService.RenderStepped:Connect(function()
-		if OFF_GROUND[humanoid:GetState()] then
+		if OFF_GROUND[humanoid:GetState()] or Players.LocalPlayer:GetAttribute("Traversal") then
 			switch(nil, 1)
 			return
 		end

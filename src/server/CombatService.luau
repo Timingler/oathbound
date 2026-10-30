@@ -487,6 +487,30 @@ local R = Net.Request
 
 local AIM_REACH = 320 -- studs; the client aims up to 300 away [Proto]
 
+-- Climbing and gliding need both hands: the weapon or tool is put out of sight, and comes back after.
+local STOWED_FOLDERS = { "OathWeapon", "OathTool" }
+local function syncStow(actor)
+	local stow = actor.exertion == "climb" or actor.exertion == "glide"
+	if (actor.stowed == true) == stow or not actor.model then
+		return
+	end
+	actor.stowed = stow
+	for _, name in STOWED_FOLDERS do
+		local folder = actor.model:FindFirstChild(name)
+		for _, part in if folder then folder:GetDescendants() else {} do
+			if part:IsA("BasePart") or part:IsA("Decal") then
+				if stow then
+					part:SetAttribute("ShownTransparency", part.Transparency)
+					part.Transparency = 1
+				else
+					part.Transparency = part:GetAttribute("ShownTransparency") or part.Transparency
+					part:SetAttribute("ShownTransparency", nil)
+				end
+			end
+		end
+	end
+end
+
 local function handleRequest(actor, req)
 	local now = CombatService.now
 	local kind = req.kind
@@ -518,14 +542,17 @@ local function handleRequest(actor, req)
 	elseif kind == R.EXERT_START then
 		local ok = Constants.EXERTION_DRAIN[req.mode] ~= nil and actor.stamina >= Constants.EXERTION_MIN and not actor.blocking
 		actor.exertion = if ok then req.mode else nil
+		syncStow(actor)
 		return
 	elseif kind == R.EXERT_END then
 		if actor.exertion then
 			actor.exertion = nil
 			actor.lastExertion = now
 		end
+		syncStow(actor)
 		return
-	elseif actor.exertion == "sprint" then
+	elseif actor.exertion == "sprint" and kind ~= R.DODGE then
+		-- Attacking, blocking or aiming ends a sprint; a dash does not, so you keep running out of it.
 		actor.exertion = nil
 		actor.lastExertion = now
 	end
@@ -666,6 +693,7 @@ local function tick()
 				actor.lastExertion = now
 				if actor.stamina <= 0 then
 					actor.exertion = nil -- the client sees this in the snapshot: it slows down, lets go or drops
+					syncStow(actor)
 				end
 			elseif not actor.blocking and now - (actor.lastExertion or -math.huge) >= Constants.STAMINA_REGEN_DELAY then
 				actor.stamina = math.min(Constants.STAMINA_POOL, actor.stamina + Constants.STAMINA_REGEN * dt)

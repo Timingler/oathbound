@@ -107,8 +107,8 @@ local function release()
 	rig.align.Enabled = false
 	rig.humanoid.AutoRotate = true
 	rig.humanoid.PlatformStand = false
-	rig.climbTrack:Stop(0.2)
-	rig.glideTrack:Stop(0.2)
+	rig.climbTrack:Stop(Constants.ANIM_FADE)
+	rig.glideTrack:Stop(Constants.ANIM_FADE)
 	if glide.sail then
 		glide.sail:Destroy()
 		glide.sail = nil
@@ -136,7 +136,7 @@ local function startClimb(hit: RaycastResult)
 	rig.align.Enabled = true
 	rig.velocity.VectorVelocity = Vector3.zero
 	rig.velocity.Enabled = true
-	rig.climbTrack:Play(0.15)
+	rig.climbTrack:Play(Constants.ANIM_FADE)
 end
 
 -- Over the top: lift and step onto the ledge, then stand.
@@ -145,6 +145,7 @@ local function mantle(top: Vector3)
 		return
 	end
 	climb.mantling = true
+	rig.climbTrack:AdjustSpeed(2) -- a quick pull over the edge
 	local root = rig.root
 	local from = root.CFrame
 	local goal = CFrame.lookAt(top + Vector3.new(0, 3.1, 0), top + Vector3.new(0, 3.1, 0) - climb.normal)
@@ -274,7 +275,7 @@ local function startGlide()
 	rig.align.CFrame = CFrame.lookAt(Vector3.zero, glide.dir)
 	rig.align.Enabled = true
 	rig.velocity.Enabled = true
-	rig.glideTrack:Play(0.2)
+	rig.glideTrack:Play(Constants.ANIM_FADE)
 	glide.sail = makeSail(rig.character)
 end
 
@@ -334,8 +335,9 @@ local function setup(character: Model)
 		root = root,
 		velocity = velocity,
 		align = align,
-		climbTrack = load(AssetIds.Traversal.Climb, Enum.AnimationPriority.Action),
-		glideTrack = load(AssetIds.Traversal.Glide, Enum.AnimationPriority.Action),
+		-- Above everything else (the weapon and tool holds, swings): the whole body climbs or glides.
+		climbTrack = load(AssetIds.Traversal.Climb, Enum.AnimationPriority.Action4),
+		glideTrack = load(AssetIds.Traversal.Glide, Enum.AnimationPriority.Action4),
 	}
 	humanoid.Died:Once(stop)
 	-- Each jump costs stamina on the server.

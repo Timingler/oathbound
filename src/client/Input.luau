@@ -28,6 +28,7 @@ local Kits = require(Shared.Kits)
 local Constants = require(Shared.Constants)
 local AssetIds = require(Shared.AssetIds)
 local LockOn = require(script.Parent.LockOn)
+local Sprint = require(script.Parent.Sprint)
 
 local R = Net.Request
 local HEAVY_HOLD = 0.25 -- seconds of holding left click before it counts as a heavy attack [Proto]
@@ -98,12 +99,46 @@ end
 
 local AIMED = { [R.BASIC] = true, [R.HEAVY] = true, [R.SKILL] = true, [R.SIGNATURE] = true, [R.ULTIMATE] = true }
 
+-- A hotbar tool's swing (pickaxe, hatchet): played here so it starts on the click, like the roll; it replicates.
+local TOOL_SWING_EVERY = 0.8 -- seconds between swings [Proto]
+local toolSwing: AnimationTrack? = nil
+local toolSwingAnimator: Animator? = nil
+local lastToolSwing = -math.huge
+local function playToolSwing(): boolean
+	local now = os.clock()
+	if now - lastToolSwing < TOOL_SWING_EVERY then
+		return false
+	end
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		return false
+	end
+	if not toolSwing or toolSwingAnimator ~= animator then
+		local animation = Instance.new("Animation")
+		animation.AnimationId = AssetIds.uri(AssetIds.Tools.swing.id)
+		toolSwing = animator:LoadAnimation(animation)
+		toolSwing.Priority = Enum.AnimationPriority.Action2 -- over the tool hold (server/Tools)
+		toolSwingAnimator = animator
+	end
+	lastToolSwing = now
+	toolSwing:Play(0.08)
+	return true
+end
+
 local function send(kind: string, extra: { [string]: any }?)
 	if player:GetAttribute("UiOpen") or player:GetAttribute("Talking") then
 		return -- a full-screen menu (the inventory) or a talk box (client/Dialogue) has the mouse
 	end
 	if player:GetAttribute("Traversal") and kind ~= R.CLASS then
 		return -- no fighting while climbing or gliding (client/Traversal)
+	end
+	if kind ~= R.DODGE and kind ~= R.CLASS then
+		Sprint.cancel() -- the server ends the sprint too; doing it now avoids running on into the swing
+	end
+	if (kind == R.BASIC or kind == R.HEAVY) and player:GetAttribute("HeldTool") and not playToolSwing() then
+		return -- a tool swing is still going
 	end
 	local req = { kind = kind }
 	if extra then
