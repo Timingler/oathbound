@@ -59,7 +59,7 @@ Fixed copies of all four kits, with the new IDs already swapped in, are in the p
 
 ## Rig type
 
-The run, wall run and bow animations are R6, the climb animations are R15. They cannot play on the other rig. The prototype's movement animations need **Game Settings > Avatar > Avatar Type: R6**; on R15 the default Roblox animations play and a warning is printed once.
+The run, wall run and bow animations are R6, the climb animations are R15. They cannot play on the other rig. The prototype forces R6 itself: `server/ForceR6.luau` puts an R6 StarterCharacter in StarterPlayer and dresses each character in the player's own avatar.
 
 ## Re-uploading
 

@@ -31,7 +31,7 @@ rojo serve             # then connect from the Rojo plugin in Studio
 2. Run `rojo serve` in this folder and press **Connect** in the plugin.
 3. Press **Play**. The arena builds itself when the server starts.
 
-Set **Game Settings > Avatar > Avatar Type** to **R6** to see the movement animations. They are R6 only.
+Every character spawns as R6 (`server/ForceR6.luau`), because the animations are R6 only. Publish the place to your own account first: animations only play in places owned by the account that uploaded them.
 
 To build a place file without Studio running: `rojo build -o oathbound.rbxl`.
 
