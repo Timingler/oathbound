@@ -130,6 +130,10 @@ def load(path):
                             rots.append(ROT_IDS[rid])
                     xs, p = _floats(body, p, n); ys, p = _floats(body, p, n); zs, p = _floats(body, p, n)
                     vals = [(xs[i], ys[i], zs[i]) + tuple(rots[i]) for i in range(n)]
+                elif t == 0x13:
+                    vals, p = _refs(body, p, n)
+                elif t == 0x1A:
+                    vals = [tuple(body[p + j * n + i] for j in range(3)) for i in range(n)]; p += 3 * n
                 elif t == 0x0D:
                     xs, p = _floats(body, p, n); ys, p = _floats(body, p, n)
                     vals = list(zip(xs, ys))

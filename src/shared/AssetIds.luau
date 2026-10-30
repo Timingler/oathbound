@@ -93,6 +93,7 @@ AssetIds.Combat = {
 			{ id = 129012896652443, length = 0.75 },
 			{ id = 122695545333172, length = 0.75 },
 		},
+		mend = { id = 79522147824602, length = 1.65 }, -- "Healing", from the REFramework place
 		sanctuary = { id = 72265550049226, length = 1.283 },
 	},
 	Common = {
@@ -102,7 +103,7 @@ AssetIds.Combat = {
 	},
 }
 
--- Combat sounds from the vania, hxh and CHAIN places, played by client/Effects.luau. Short sound effects are public
+-- Combat sounds from the vania, hxh and Excry places, played by client/Effects.luau. Short sound effects are public
 -- on Roblox, so these IDs play in any game; one that does not will just stay silent. Lists pick one at random.
 AssetIds.Sfx = {
 	swing = { 4898257652, 4898262512 },

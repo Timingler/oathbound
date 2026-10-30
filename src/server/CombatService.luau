@@ -16,6 +16,7 @@ local Scaling = require(Shared.Scaling)
 local Actor = require(script.Parent.Actor)
 local Abilities = require(script.Parent.Abilities)
 local Animations = require(script.Parent.Animations)
+local Weapons = require(script.Parent.Weapons)
 
 local CombatService = {}
 
@@ -380,6 +381,7 @@ local function spawnActor(player: Player, character: Model)
 	CombatService.actors[actor.id] = actor
 
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+	task.spawn(Weapons.equip, character, className)
 	humanoid.MaxHealth = actor.maxHealth
 	humanoid.Health = actor.maxHealth
 	humanoid.Died:Connect(function()
@@ -400,6 +402,9 @@ function CombatService.setClass(actor, className: string)
 	end
 	CombatService.classOf[actor.player] = className
 	actor:applyKit(kit)
+	if actor.model then
+		task.spawn(Weapons.equip, actor.model, className)
+	end
 	CombatService.log(actor, "Switched to " .. className)
 end
 
