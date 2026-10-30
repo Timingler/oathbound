@@ -19,7 +19,138 @@ local HIT_EFFECT = {
 	Warden = "slash",
 	Assassin = "stab",
 	Cleric = "blunt",
+	Ranger = "stab",
 }
+
+----------------------------------------------------------------------------------------------------
+-- Arrows: drawn on the same arc the server simulates (server/Projectiles), so they land where it says they hit.
+
+local RunService = game:GetService("RunService")
+
+local ARROW_LIFETIME = 3 -- seconds; the server ends every arrow well before this
+local VOLLEY_ARROWS = 12 -- [Proto]
+
+local arrows: { [number]: any } = {}
+
+local function makeArrow(pierce: boolean): Model
+	local model = Instance.new("Model")
+	model.Name = "Arrow"
+	local shaft = Instance.new("Part")
+	shaft.Name = "Shaft"
+	shaft.Size = Vector3.new(0.12, 0.12, 2.6)
+	shaft.Color = Color3.fromRGB(120, 86, 52)
+	shaft.Material = Enum.Material.Wood
+	local tip = Instance.new("Part")
+	tip.Name = "Tip"
+	tip.Size = Vector3.new(0.22, 0.22, 0.4)
+	tip.Color = if pierce then Color3.fromRGB(150, 210, 255) else Color3.fromRGB(190, 190, 195)
+	tip.Material = if pierce then Enum.Material.Neon else Enum.Material.Metal
+	for _, p in { shaft, tip } do
+		p.Anchored = true
+		p.CanCollide = false
+		p.CanQuery = false
+		p.CanTouch = false
+		p.CastShadow = false
+		p.Parent = model
+	end
+	local a0 = Instance.new("Attachment")
+	a0.Position = Vector3.new(0, 0.08, 1.2)
+	a0.Parent = shaft
+	local a1 = Instance.new("Attachment")
+	a1.Position = Vector3.new(0, -0.08, 1.2)
+	a1.Parent = shaft
+	local trail = Instance.new("Trail")
+	trail.Attachment0 = a0
+	trail.Attachment1 = a1
+	trail.Lifetime = 0.25
+	trail.LightEmission = 1
+	trail.FaceCamera = true
+	trail.Color = ColorSequence.new(if pierce then Color3.fromRGB(150, 210, 255) else Color3.new(1, 1, 1))
+	trail.Transparency = NumberSequence.new(0.3, 1)
+	trail.Parent = shaft
+	model.PrimaryPart = shaft
+	return model
+end
+
+local function placeArrow(model: Model, pos: Vector3, vel: Vector3)
+	if vel.Magnitude < 1e-3 then
+		return
+	end
+	local cf = CFrame.lookAt(pos, pos + vel)
+	local shaft = model.PrimaryPart :: BasePart
+	shaft.CFrame = cf
+	;(model:FindFirstChild("Tip") :: BasePart).CFrame = cf * CFrame.new(0, 0, -1.45)
+end
+
+-- Starts drawing an arrow from `pos` with `vel`, falling at `g`.
+local function launch(id: number, pos: Vector3, vel: Vector3, g: number, pierce: boolean)
+	local model = makeArrow(pierce)
+	placeArrow(model, pos, vel)
+	model.Parent = workspace
+	arrows[id] = { model = model, pos = pos, vel = vel, g = g, born = os.clock() }
+end
+
+local function land(id: number, pos: Vector3?)
+	local a = arrows[id]
+	if not a then
+		return
+	end
+	arrows[id] = nil
+	if pos then
+		placeArrow(a.model, pos, a.vel)
+	end
+	-- Leave it stuck where it landed for a moment.
+	Debris:AddItem(a.model, 0.6)
+end
+
+RunService.RenderStepped:Connect(function(dt)
+	for id, a in arrows do
+		a.pos += a.vel * dt + Vector3.new(0, -0.5 * a.g * dt * dt, 0)
+		a.vel += Vector3.new(0, -a.g * dt, 0)
+		placeArrow(a.model, a.pos, a.vel)
+		if os.clock() - a.born > ARROW_LIFETIME then
+			land(id, nil)
+		end
+	end
+end)
+
+-- A Volley: a gold circle on the ground, then arrows falling into it as the hit lands.
+local volleyIds = -1
+local function volley(point: Vector3, radius: number, delay: number)
+	local ground = Effects.ground(point) or point
+	local circle = Instance.new("Part")
+	circle.Shape = Enum.PartType.Cylinder
+	circle.Anchored = true
+	circle.CanCollide = false
+	circle.CanQuery = false
+	circle.CanTouch = false
+	circle.Material = Enum.Material.Neon
+	circle.Color = Color3.fromRGB(255, 205, 90)
+	circle.Transparency = 0.7
+	circle.Size = Vector3.new(0.15, radius * 2, radius * 2)
+	circle.CFrame = CFrame.new(ground + Vector3.new(0, 0.1, 0)) * CFrame.Angles(0, 0, math.rad(90))
+	circle.Parent = workspace
+	Debris:AddItem(circle, delay + 0.3)
+	local fall = 0.35 -- seconds each arrow falls
+	local speed = 90
+	for i = 1, VOLLEY_ARROWS do
+		task.delay(math.max(0, delay - fall) + math.random() * 0.15, function()
+			local angle = math.random() * math.pi * 2
+			local r = math.sqrt(math.random()) * radius
+			local target = ground + Vector3.new(math.cos(angle) * r, 0, math.sin(angle) * r)
+			local start = target + Vector3.new(-4, speed * fall, 2)
+			volleyIds -= 1
+			launch(volleyIds, start, (target - start).Unit * speed, 0, false)
+			local id = volleyIds
+			task.delay(fall, function()
+				land(id, target)
+			end)
+		end)
+	end
+	task.delay(delay, function()
+		Effects.sfx("arrowHit", ground)
+	end)
+end
 
 local RANGE_FIELDS = { "Lifetime", "Speed", "RotSpeed", "Rotation", "FlipbookFramerate" }
 local SEQUENCE_FIELDS = { "Size", "Transparency", "Squash" }
@@ -239,11 +370,32 @@ local function both(key: string, position: Vector3?)
 	Effects.sfx(key, position)
 end
 
+-- Camera shake: a small decaying jitter on heavy hits you deal or take, applied after the camera scripts.
+local Players = game:GetService("Players")
+local localPlayer = Players.LocalPlayer
+local SHAKE_DEAL = 0.25 -- degrees [Proto]
+local SHAKE_TAKE = 0.6 -- degrees [Proto]
+local SHAKE_TIME = 0.18 -- seconds [Proto]
+local shakeUntil, shakeStrength = 0, 0
+function Effects.shake(degrees: number)
+	shakeStrength = math.max(if os.clock() < shakeUntil then shakeStrength else 0, degrees)
+	shakeUntil = os.clock() + SHAKE_TIME
+end
+RunService:BindToRenderStep("OathShake", Enum.RenderPriority.Camera.Value + 3, function()
+	local left = shakeUntil - os.clock()
+	if left <= 0 or localPlayer:GetAttribute("UiOpen") then
+		return
+	end
+	local s = math.rad(shakeStrength * left / SHAKE_TIME)
+	local camera = workspace.CurrentCamera
+	camera.CFrame *= CFrame.Angles((math.random() - 0.5) * 2 * s, (math.random() - 0.5) * 2 * s, 0)
+end)
+
 function Effects.onFx(event)
 	local t = event.t
 	local pos = event.pos
 	if t == "swing" then
-		Effects.sfx("swing", pos)
+		Effects.sfx(if event.class == "Ranger" then "bowDraw" else "swing", pos)
 		if event.ability == "mend" and pos then
 			-- Casting circle under the Cleric while Mend winds up.
 			Effects.vfx("heal", Effects.ground(pos), 1.3)
@@ -251,6 +403,9 @@ function Effects.onFx(event)
 		end
 	elseif t == "hit" then
 		both(if event.blocked then "blockHit" else HIT_EFFECT[event.class] or "slash", pos)
+		if event.heavy and event.uid == localPlayer.UserId then
+			Effects.shake(SHAKE_DEAL)
+		end
 	elseif t == "heal" then
 		-- Circles go on the floor under whoever was healed. Sanctuary draws its own big circle, so its heals only
 		-- add a small one; Smite's side heal is smaller than Mend's.
@@ -275,6 +430,9 @@ function Effects.onFx(event)
 		end
 	elseif t == "hurt" then
 		both(if event.blocked then "blockHit" else "hurt", pos)
+		if event.heavy and event.uid == localPlayer.UserId then
+			Effects.shake(SHAKE_TAKE)
+		end
 	elseif t == "bossAttack" then
 		if event.key == "sweep" then
 			Effects.vfx("slam", pos)
@@ -286,6 +444,18 @@ function Effects.onFx(event)
 		both("guardBreak", pos)
 	elseif t == "cast" then
 		Effects.sfx("bossCast", pos)
+	elseif t == "arrow" then
+		launch(event.id, event.pos, event.vel, event.g, event.pierce)
+		Effects.sfx("bowRelease", pos)
+	elseif t == "arrowEnd" then
+		land(event.id, event.pos)
+		if event.hit then
+			Effects.sfx("arrowHit", pos)
+		end
+	elseif t == "volley" then
+		volley(pos, event.radius, event.delay)
+	elseif t == "leap" then
+		Effects.sfx("dodge", pos)
 	end
 end
 

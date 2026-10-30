@@ -40,7 +40,7 @@ AssetIds.Climb = {
 	["Vault Right"] = 128307554666894,
 }
 
--- Bow & Arrow System. R6 only. For the Ranger (Marksman) when it is added.
+-- Bow & Arrow System. R6 only. The Ranger's bow animations (AssetIds.Combat.Ranger and Hold.Ranger).
 AssetIds.Bow = {
 	Idle = 121372386174806,
 	Run = 96497238936992,
@@ -83,9 +83,9 @@ AssetIds.Combat = {
 			{ id = 139000887992280, length = 0.7, hit = 0.27 },
 			{ id = 98167371563431, length = 0.7, hit = 0.33 },
 		},
-		backstab = { id = 124203937681949, length = 0.483, hit = 0.17 },
+		backstab = { id = 139960105120020, length = 0.967, hit = 0.67 }, -- vania "Gut Breaker": raise and plunge
 		block = { id = 89797086934236, length = 0.3 },
-		finisher = { id = 108220663192078, length = 1.083, hit = 0.47 },
+		finisher = { id = 91687057719601, length = 1.183, hit = 1.07 }, -- vania "Disarming Slash": dip, rising slash, thrust
 		poison = { id = 125562417023753, length = 1.5, hit = 1.2 },
 	},
 	Cleric = {
@@ -98,10 +98,27 @@ AssetIds.Combat = {
 		mend = { id = 79522147824602, length = 1.65, hit = 0.4 }, -- "Healing", from the REFramework place
 		sanctuary = { id = 72265550049226, length = 1.283, hit = 0.37 },
 	},
+	-- Bow & Arrow System (AssetIds.Bow). For a shot, `hit` is the release. Long draws play "Aim" (draw and hold),
+	-- then `release` ("Aimed Shot") starts `release.hit` seconds before the wind-up ends so the string lets go on
+	-- the fire tick.
+	Ranger = {
+		basic = {
+			{ id = 107887253067644, length = 0.75, hit = 0.5 }, -- Shoot
+		},
+		aimed = { id = 134782919099562, length = 0.67, hit = 0.67, release = { id = 71054802195595, length = 0.47, hit = 0.3 } },
+		pierce = { id = 134782919099562, length = 0.67, hit = 0.67, release = { id = 71054802195595, length = 0.47, hit = 0.3 } },
+		volley = { id = 107887253067644, length = 0.75, hit = 0.5 },
+	},
 	Common = {
 		parry1 = { id = 92880082908381, length = 0.5 },
 		parry2 = { id = 81125391426221, length = 0.4 },
 		roll = { id = 123385016461782, length = 1.167, hit = 0.73 },
+		-- Hit flinches from BATTLECOMBATR6 ("Hurt1" to "Hurt3"), one picked at random when a hit lands.
+		hurt = {
+			{ id = 102814487565218, length = 0.45 },
+			{ id = 119621642557759, length = 0.45 },
+			{ id = 101378513702948, length = 0.45 },
+		},
 	},
 }
 
@@ -111,6 +128,7 @@ AssetIds.Hold = {
 	Warden = 77132799404420, -- "idle 1 hand"
 	Assassin = 134201934974804, -- "Dagger idle"
 	Cleric = 92760080918876, -- "greatsword idle": vania has no hammer idle; this one rests the hammer on the shoulder
+	Ranger = 121372386174806, -- Bow & Arrow System "Bow Idle"
 }
 
 -- Combat sounds from the vania, hxh and Excry places, played by client/Effects.luau. Short sound effects are public
@@ -129,6 +147,10 @@ AssetIds.Sfx = {
 	bossSwing = { 6589514393 },
 	bossSlam = { 5540424854, 12826036518 },
 	bossCast = { 6856435312 },
+	-- Bow & Arrow System sounds (AssetIds.BowSounds), uploaded to the Oathbound account.
+	bowDraw = { 81940370131397 },
+	bowRelease = { 117085747216533 },
+	arrowHit = { 92587572434465 },
 }
 
 function AssetIds.uri(id: number): string

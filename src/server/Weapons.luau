@@ -2,6 +2,8 @@
 -- moves a "Hilt" part joined to the Right Arm, so the weapon is welded to a Hilt joined the same way. Like vania,
 -- a looping hold pose (AssetIds.Hold) keeps the arm up and the weapon in the hand between attacks.
 -- Weapon meshes and offsets are in shared/WeaponLibrary. R6 only.
+-- The Ranger's bow is the exception: it comes from the Bow & Arrow System kit, whose animations move a "RootPart"
+-- joined to the Left Arm, so the bow hangs off a part of that name in the left hand.
 
 local AssetService = game:GetService("AssetService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,6 +18,15 @@ local FOLDER = "OathWeapon"
 local HILT_C0 = CFrame.new(0, -0.65, 0) -- where vania's rig holds the Hilt, below the Right Arm's centre
 local HOLD_ATTRIBUTE = "WeaponHold" -- client/Locomotion leaves the standing pose to the hold while this is set
 local HOLD_FADE = 0.2 -- seconds [Proto]
+
+-- The bow, from the Bow & Arrow System kit's model: two meshes at fixed offsets from its RootPart.
+local BOW = {
+	color = Color3.fromRGB(106, 57, 9),
+	parts = {
+		{ name = "BowBody", meshId = "rbxassetid://114741889137943", size = Vector3.new(1.6249, 6.3576, 0.2384), offset = CFrame.new(-0.7212, -0.003, 0) },
+		{ name = "BowString", meshId = "rbxassetid://84384875676666", size = Vector3.new(0.0365, 6.0925, 0.1024), offset = CFrame.new(-1.4696, -0.0169, 0.007) },
+	},
+}
 
 -- Per character: the looping hold pose, and a count of equips so one that finishes loading late can tell a newer
 -- one has started.
@@ -86,6 +97,52 @@ local function makePart(def): MeshPart?
 	return part
 end
 
+-- Builds the bow in `folder`: a RootPart joined to the Left Arm (the part the bow animations move) and the meshes
+-- welded to it.
+local function buildBow(folder: Folder, leftArm: BasePart)
+	local root = Instance.new("Part")
+	root.Name = "RootPart" -- the bow animations' Pose name; must match
+	root.Size = Vector3.new(0.13, 0.13, 0.06)
+	root.Transparency = 1
+	root.CanCollide = false
+	root.CanQuery = false
+	root.CanTouch = false
+	root.Massless = true
+	root.CFrame = leftArm.CFrame
+	root.Parent = folder
+
+	local joint = Instance.new("Motor6D")
+	joint.Name = "WBow"
+	joint.Part0 = leftArm
+	joint.Part1 = root
+	joint.Parent = leftArm
+
+	for _, partDef in BOW.parts do
+		local ok, part = pcall(function()
+			return AssetService:CreateMeshPartAsync(partDef.meshId)
+		end)
+		if not ok or not part then
+			warn("[Weapons] could not load bow mesh " .. partDef.meshId .. ": " .. tostring(part))
+			continue
+		end
+		part.Name = partDef.name
+		part.Size = partDef.size
+		part.Color = BOW.color
+		part.Material = Enum.Material.Wood
+		part.CanCollide = false
+		part.CanQuery = false
+		part.CanTouch = false
+		part.Massless = true
+		part.CFrame = root.CFrame * partDef.offset
+		local weld = Instance.new("Weld")
+		weld.Part0 = root
+		weld.Part1 = part
+		weld.C0 = partDef.offset
+		weld.Parent = part
+		part.Parent = folder
+	end
+end
+
 -- Removes any weapon and gives the character the one for `className`. Yields while the meshes load.
 function Weapons.equip(character: Model, className: string)
 	local equip = (equips[character] or 0) + 1
@@ -97,12 +154,29 @@ function Weapons.equip(character: Model, className: string)
 	hold(character, nil)
 	local def = WeaponLibrary[className]
 	local arm = character:WaitForChild("Right Arm", 10) :: BasePart?
-	if not arm then
+	local leftArm = character:WaitForChild("Left Arm", 10) :: BasePart?
+	if not arm or not leftArm then
 		return
 	end
-	local oldJoint = arm:FindFirstChild("WHilt")
-	if oldJoint then
-		oldJoint:Destroy()
+	local oldHilt = arm:FindFirstChild("WHilt")
+	if oldHilt then
+		oldHilt:Destroy()
+	end
+	local oldBow = leftArm:FindFirstChild("WBow")
+	if oldBow then
+		oldBow:Destroy()
+	end
+	if className == "Ranger" then
+		local folder = Instance.new("Folder")
+		folder.Name = FOLDER
+		buildBow(folder, leftArm)
+		if equips[character] ~= equip then
+			folder:Destroy()
+			return
+		end
+		folder.Parent = character
+		hold(character, className)
+		return
 	end
 	if not def then
 		return

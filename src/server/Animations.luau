@@ -21,7 +21,7 @@ local COMBO_RESET = 1.5 -- seconds without a basic attack before the combo start
 local MIN_RATE = 0.75
 local MAX_RATE = 1
 
-type Entry = { id: number, length: number, hit: number? }
+type Entry = { id: number, length: number, hit: number?, release: any? }
 
 -- Per character: loaded tracks, and what is playing now.
 local states: { [Model]: any } = setmetatable({}, { __mode = "k" }) :: any
@@ -108,6 +108,20 @@ function Animations.action(actor, def, now: number)
 	t.TimePosition = start
 	t:AdjustSpeed(rate)
 	state.action = t
+
+	-- A long draw (the Ranger's Aimed Shot): the release clip takes over so the string lets go on the fire tick.
+	-- A dodge or block in between stops the draw, which cancels the release.
+	local release = entry.release
+	if release then
+		local releaseTrack = track(state, release, Enum.AnimationPriority.Action, false)
+		task.delay(math.max(0, windup - (release.hit or 0)), function()
+			if state.action == t then
+				t:Stop(FADE)
+				releaseTrack:Play(0.05)
+				state.action = releaseTrack
+			end
+		end)
+	end
 end
 
 -- Block raised or lowered. Classes without their own block pose use the Warden's.
@@ -143,6 +157,44 @@ function Animations.parry(actor)
 	parryFlip = not parryFlip
 	local entry = if parryFlip then AssetIds.Combat.Common.parry1 else AssetIds.Combat.Common.parry2
 	track(state, entry, Enum.AnimationPriority.Action2, false):Play(FADE)
+end
+
+-- A hit landed on `actor`: a short flinch, unless it is mid-swing or blocking (a flinch would cut the swing's
+-- animation while the swing still lands).
+local HURT_RATE = 1.2 -- [Proto]
+function Animations.hurt(actor)
+	local state = stateFor(actor)
+	if not state then
+		return
+	end
+	if (state.action and state.action.IsPlaying) or state.block then
+		return
+	end
+	local set = AssetIds.Combat.Common.hurt
+	local t = track(state, set[math.random(#set)], Enum.AnimationPriority.Action, false)
+	t:Play(0.05)
+	t:AdjustSpeed(HURT_RATE)
+end
+
+-- Hit-stop: `actor`'s swing freezes for a moment when it connects, so hits feel heavy.
+local HIT_STOP = 0.06 -- seconds [Proto]
+local HIT_STOP_HEAVY = 0.11 -- crits and slow attacks [Proto]
+function Animations.hitStop(actor, heavy: boolean?)
+	local state = stateFor(actor)
+	local t = state and state.action
+	if not t or not t.IsPlaying then
+		return
+	end
+	local speed = t.Speed
+	if speed <= 0.01 then
+		return
+	end
+	t:AdjustSpeed(0.05)
+	task.delay(if heavy then HIT_STOP_HEAVY else HIT_STOP, function()
+		if state.action == t and t.IsPlaying then
+			t:AdjustSpeed(speed)
+		end
+	end)
 end
 
 -- Dodge, death or a cancelled wind-up: stop the action and lower the block.

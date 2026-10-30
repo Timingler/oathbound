@@ -53,7 +53,27 @@ Like vania's WeaponHandler, the server loops a hold pose while the weapon is out
 | vania, hxh, CHAIN, jjk cool map | Cleared by Charles. vania (gothic fantasy) is the best match; CHAIN is horror; jjk is a map only |
 | Quirkbound, Newest Ghoul RE, New moon | Not used. Their scripts carry "Saved by UniversalSynSaveInstance (Join to Copy Games)" and decompiler stamps, so they were copied from live games with an exploit |
 | HAV DEV SERVER | Not used. Two small scripts (menu, quotes) are decompiled; the rest looks original |
-| Excry Main Game, Cursed Reality, BATTLECOMBATR6, Anime Brigade, REFrameworkV2 | Cleared by Charles. Used: REFramework's Healing animation, Excry's heal, stab and boss sounds |
+| Excry Main Game, Cursed Reality, BATTLECOMBATR6, Anime Brigade, REFrameworkV2 | Cleared by Charles. Used: REFramework's Healing animation, Excry's heal, stab and boss sounds, BATTLECOMBATR6's Hurt1 to Hurt3 |
+| CHAIN, jjk cool map | Not used after all: a full scan found decompiler stamps (Synapse X in 34 CHAIN scripts, Potassium in two jjk settings modules) |
+| Guns place, MW2019_VMs_1, Newest Ninja Main Menu, Project Mugetsu (all PM-* places) | Not used. Guns, MW2019 and Ninja Main Menu carry Synapse or UniversalSynSaveInstance stamps; Project Mugetsu is a live game's files |
+
+### Animation survey (2026-10-30)
+
+Every KeyframeSequence in the library (2,082) was scanned. All of them are R6; there are no R15 animations, so the game stays R6. Each candidate was previewed in Studio on a rig holding the class's weapon. The picks were uploaded to the Oathbound account from the PC with `tools/reupload/upload.luau` (a Lune port of `upload.py`) and are wired into `AssetIds.Combat`:
+
+| Use | Animation | Source |
+|---|---|---|
+| Assassin Backstab | Gut Breaker: wind-up, overhead raise, downward plunge | vania |
+| Assassin Finisher | Disarming Slash: low dip, rising slash, thrust | vania |
+| Hit flinch (players and Duelists) | Hurt1, Hurt2, Hurt3 | BATTLECOMBATR6 |
+
+### Ranger (Bow & Arrow System, BestRobloxLib)
+
+The Ranger uses the Bow & Arrow System kit: its seven bow animations (`AssetIds.Bow`, uploaded earlier), its sounds (`AssetIds.BowSounds`) and its bow model, whose two meshes `server/Weapons.luau` loads by ID and hangs from a "RootPart" joined to the Left Arm, the part the bow animations move. Arrows are drawn by `client/Effects.luau` from parts, after the kit's arrow (a union that scripts cannot create). Quick Shot and Volley play "Shoot"; Aimed Shot and Piercing Arrow draw with "Aim" and release with "Aimed Shot"; "Bow Idle" is the hold. The kit's scripts were not used.
+
+BestRobloxLib, checked for dump stamps: Advanced Mining System and FREE R6 Fishing System each carry a decompiler stamp and were not used. The rest (Bow & Arrow System, Run System, Wall Run, Wall Climb, Lantern, Ragdoll, Sprint) are clean.
+
+Looked at and rejected: Excry "manaimbue" (a crouched punch charge, not a heal), REFramework "Healing" and vania "NPCPoint" (no Hilt pose, so the hammer sticks out), vania "Waterfall dance" (a 3.3 s acrobatic leap), vania "greataxe skill 1" (a 2.6 s spin). Excry's "Jump Smash", "Death" and "Stun 1" are on a different, non-Roblox rig and do not move an R6 character. None of the cleared files has a hammer heal or cast, so Mend and Sanctuary keep their current animations until a fitting one is found or made.
 
 **Credit:** the Run System's licence asks for "Run and Walk System by @skaterstudios" in the game description. Add it before publishing.
 

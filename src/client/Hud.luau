@@ -67,6 +67,10 @@ function Hud.start()
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = true
 	gui.Parent = player:WaitForChild("PlayerGui")
+	-- The inventory screen (client/Inventory) covers the whole view; the combat HUD would show through it.
+	player:GetAttributeChangedSignal("UiOpen"):Connect(function()
+		gui.Enabled = not player:GetAttribute("UiOpen")
+	end)
 
 	-- Boss, top centre
 	ui.bossName = label(gui, { Position = UDim2.new(0.5, -250, 0, 18), Size = UDim2.fromOffset(500, 20), Font = Enum.Font.GothamBold, TextSize = 16 })
@@ -102,7 +106,7 @@ function Hud.start()
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextSize = 12,
 		TextWrapped = true,
-		Text = "LMB tap: basic   LMB hold: heavy\nRMB hold: block (first 200 ms parries)\nSpace: dodge   Q / E / R: skills\nT: Intercept (Warden)   F: ultimate (later)\n1 Assassin   2 Cleric   3 Warden (out of combat)\nLeft Alt: free the mouse",
+		Text = "LMB tap: basic   LMB hold: heavy\nRMB hold: block (first 200 ms parries)\nSpace: dodge   Q / E / R: skills\nT: Intercept (Warden)   F: ultimate (later)\n1 Assassin   2 Cleric   3 Warden   4 Ranger (out of combat)\nLeft Alt: free the mouse",
 	})
 	ui.class = label(gui, { Position = UDim2.fromOffset(12, 36), Size = UDim2.fromOffset(330, 20), TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.GothamBold, TextSize = 16 })
 

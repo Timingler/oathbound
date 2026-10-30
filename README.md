@@ -6,10 +6,11 @@ An open-world fantasy RPG on Roblox. The design lives in the Oathbound GDD v2; t
 
 The first slice tests whether the combat feels good:
 
-- **Three classes**, one per role, with the placeholder kits from the design docs:
+- **Four classes** with the placeholder kits from the design docs (the Ranger is a prototype addition):
   - **Assassin** (damage): basic attacks build combo points and apply Mark. Backstab, Poison Blade and Smoke Step. Hold left click at 5 points for the Finisher.
   - **Cleric** (healer): basic attacks heal the most hurt ally. Mend and Sanctuary.
   - **Warden** (tank): blocking builds Grit and Bulwark. Shield Bash interrupts, Cleave hits a cone, and Intercept (T) dashes to an ally and takes their next hit.
+  - **Ranger** (ranged damage, key 4): real arrows that fly where you aim and drop a little. Quick Shot (tap), Aimed Shot (hold), Piercing Arrow, Volley (arrows rain on a circle) and Disengage (leap back). The base class for Marksman, Beastmaster and Druid later. Bow, animations and sounds from the Bow & Arrow System kit.
 - **One-action timeline** on the server: wind-up, fire, recovery, in 50 ms ticks. Dodging cancels a wind-up and costs nothing.
 - **Block, parry and dodge.** Attack colours tell you what works: white (anything), orange (dodge or parry), red (dodge or move).
 - **The Ashen Sentinel**, a test boss with a white swing, an orange tank-buster, a red sweep and an interruptible cast. It also has a Break meter: parries and interrupts fill it, and a full meter stuns the boss for 3 seconds.

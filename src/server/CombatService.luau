@@ -17,6 +17,7 @@ local Actor = require(script.Parent.Actor)
 local Abilities = require(script.Parent.Abilities)
 local Animations = require(script.Parent.Animations)
 local Weapons = require(script.Parent.Weapons)
+local Projectiles = require(script.Parent.Projectiles)
 
 local CombatService = {}
 
@@ -225,11 +226,19 @@ function CombatService.strike(source, target, amount: number, def, isTick: boole
 		pos = pos,
 		class = source.kit and source.kit.id,
 		blocked = blocked,
+		heavy = crit or (def.windup or 0) >= 0.6, -- client/Effects shakes the attacker's camera
+		uid = source.player and source.player.UserId,
 	})
 	CombatService.log(
 		source,
 		string.format("%s hit %s for %s%s%s", def.name, target.name, fmt(damage), crit and " (crit)" or "", blocked and " (blocked)" or "")
 	)
+	if not isTick then
+		Animations.hitStop(source, crit or (def.windup or 0) >= 0.6)
+		if not blocked then
+			Animations.hurt(target)
+		end
+	end
 end
 
 function CombatService.applyDot(source, target, def, total: number)
@@ -280,6 +289,16 @@ function CombatService.heal(source, target, amount: number, def)
 			crit and " (crit)" or ""
 		)
 	)
+end
+
+function CombatService.fireArrow(actor, def, target)
+	Projectiles.fireArrow(CombatService, actor, def, target)
+end
+
+-- A Volley: lands on the circle around `point` after the arrows fall.
+function CombatService.volley(actor, def, point: Vector3)
+	CombatService.fx({ t = "volley", src = actor.id, pos = point, radius = def.radius, delay = def.delay })
+	Projectiles.area(CombatService, actor, def, point, CombatService.now + def.delay)
 end
 
 function CombatService.interrupt(source, target)
@@ -370,7 +389,19 @@ function CombatService.enemyHit(enemy, target, written: number, attack)
 	toHealth, target.shield = Formulas.absorb(damage, target.shield)
 	target.health = math.max(0, target.health - toHealth)
 
-	CombatService.fx({ t = "hurt", dst = target.id, amount = toHealth, pos = tp, blocked = blockDR > 0 })
+	CombatService.fx({
+		t = "hurt",
+		dst = target.id,
+		amount = toHealth,
+		pos = tp,
+		blocked = blockDR > 0,
+		heavy = toHealth >= 0.15 * target.maxHealth, -- client/Effects shakes the camera
+		uid = target.player and target.player.UserId,
+	})
+	Animations.hitStop(enemy, toHealth >= 0.15 * target.maxHealth)
+	if blockDR == 0 then
+		Animations.hurt(target)
+	end
 	CombatService.log(
 		target,
 		string.format("%s hit you for %s%s", attack.name, fmt(toHealth), blockDR > 0 and " (blocked)" or "")
@@ -411,7 +442,7 @@ local function spawnActor(player: Player, character: Model)
 		actor.dead = true
 		actor.health = 0
 	end)
-	CombatService.log(actor, "You are " .. className .. ". Press 1, 2 or 3 out of combat to switch class.")
+	CombatService.log(actor, "You are " .. className .. ". Press 1 to 4 out of combat to switch class.")
 end
 
 function CombatService.setClass(actor, className: string)
@@ -522,6 +553,7 @@ local function tick()
 	for _, npc in CombatService.npcs do
 		npc:step(now)
 	end
+	Projectiles.step(CombatService, now) -- arrows in flight, and Volleys landing
 	for _, actor in CombatService.actors do
 		for key, dot in actor.dots do
 			if now >= dot.nextTick - 1e-6 then

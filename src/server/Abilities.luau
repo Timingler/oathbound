@@ -113,6 +113,23 @@ function Abilities.tryInstant(service, actor, def, now: number): (boolean, strin
 		Abilities.startCooldown(actor, def, now)
 		service.log(actor, def.name .. ": untargetable for " .. def.untargetable .. " s")
 		return true
+	elseif def.effect == "disengage" then
+		-- Leap straight back, untouchable for a moment. The owner's client moves the character (client/Input),
+		-- like a dodge; this cancels any wind-up in progress.
+		actor.timeline:cancel()
+		actor.blocking = false
+		Animations.cancel(actor)
+		actor.dodgeUntil = now + def.invuln
+		Abilities.startCooldown(actor, def, now)
+		service.fx({
+			t = "leap",
+			src = actor.id,
+			player = actor.player and actor.player.UserId,
+			dir = -flat(actor:lookVector()).Unit,
+			distance = def.distance,
+			pos = actor:position(),
+		})
+		return true
 	end
 	return false, "unknown instant"
 end
@@ -188,6 +205,23 @@ function Abilities.fire(service, actor, def, payload, now: number)
 			return
 		end
 		service.applyDot(actor, target, def, def.dotCoeff * wd)
+	elseif effect == "shot" then
+		-- An arrow: it flies from the bow and hits whatever it meets (server/Projectiles), so no target is needed.
+		if def.gain then
+			actor:gainResource(def.gain)
+		end
+		service.fireArrow(actor, def, target)
+	elseif effect == "volley" then
+		local point
+		if target and target:isAlive() then
+			point = target:position() :: Vector3
+		else
+			local root = actor:root()
+			point = root and root.Position + flat(actor:lookVector()).Unit * math.min(def.range, 25)
+		end
+		if point then
+			service.volley(actor, def, point)
+		end
 	elseif effect == "cleave" then
 		local hit = service.enemiesInCone(actor, def.range + RANGE_TOLERANCE, def.coneDegrees)
 		for _, enemy in hit do

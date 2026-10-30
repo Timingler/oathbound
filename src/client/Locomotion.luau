@@ -16,7 +16,9 @@ local FADE = 0.2 -- seconds [Proto]
 local MOVING = 0.5 -- studs per second below which the character counts as standing still
 local RUN_FROM = 20 -- studs per second; the prototype walks at 16 and has no sprint yet [Proto]
 -- Speeds the kit's walk and run cycles were authored for, and its playback rate limits.
-local WALK_ANIM_SPEED = 12
+-- The walk was authored for about 12 studs/s; at the prototype's 16 that played it 1.33x and looked hurried
+-- (playtest feedback), so it is matched to 14.5: about 1.1x, with a little foot slide. [Proto]
+local WALK_ANIM_SPEED = 14.5
 local RUN_ANIM_SPEED = 24
 local MIN_RATE = 0.4
 local MAX_RATE = 1.6

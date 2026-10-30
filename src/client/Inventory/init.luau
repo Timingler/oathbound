@@ -348,7 +348,7 @@ local function renderStats()
 	local s = data and data.stats
 	local list = ui.statList
 	for _, child in list:GetChildren() do
-		if not child:IsA("UIListLayout") then
+		if not child:IsA("UIGridStyleLayout") then -- keep the grid layout itself
 			child:Destroy()
 		end
 	end

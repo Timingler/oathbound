@@ -5,7 +5,7 @@
 --   Q, E, R                 skills
 --   T                       signature key (Warden Intercept)
 --   F                       ultimate (not built yet)
---   1, 2, 3                 switch class out of combat [Proto]
+--   1, 2, 3, 4              switch class out of combat [Proto]
 --   Left Alt                free the mouse for the UI [Proto]
 -- The camera works like shift lock: the mouse is locked to the centre and your character faces the camera,
 -- so attacks go where you look.
@@ -115,8 +115,40 @@ local function bind(name: string, fn: (Enum.UserInputState) -> (), ...)
 	end, false, Enum.ContextActionPriority.High.Value, ...)
 end
 
+-- The Ranger's Disengage: the server grants it (and the invulnerability), then this client, which owns the
+-- character's physics, makes the leap: back along `dir` and a little up.
+local LEAP_TIME = 0.35 -- seconds [Proto]
+local LEAP_LIFT = 14 -- studs per second upward [Proto]
+function Input.leap(dir: Vector3, distance: number)
+	local root, humanoid = rootAndHumanoid()
+	if not root or not humanoid or humanoid.Health <= 0 then
+		return
+	end
+	local attachment = Instance.new("Attachment")
+	attachment.Parent = root
+	local velocity = Instance.new("LinearVelocity")
+	velocity.Attachment0 = attachment
+	velocity.MaxForce = 1e6
+	velocity.VectorVelocity = dir * (distance / LEAP_TIME) + Vector3.new(0, LEAP_LIFT, 0)
+	velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+	velocity.Parent = root
+	task.delay(LEAP_TIME, function()
+		velocity:Destroy()
+		attachment:Destroy()
+		-- Land where the leap ends instead of sliding on with its speed.
+		local v = root.AssemblyLinearVelocity
+		root.AssemblyLinearVelocity = Vector3.new(0, math.min(v.Y, 0), 0)
+	end)
+end
+
 function Input.start()
 	actionRemote = ReplicatedStorage:WaitForChild(Net.FOLDER):WaitForChild(Net.ACTION) :: RemoteEvent
+	local fxRemote = ReplicatedStorage:WaitForChild(Net.FOLDER):WaitForChild(Net.FX) :: RemoteEvent
+	fxRemote.OnClientEvent:Connect(function(event)
+		if event.t == "leap" and event.player == player.UserId then
+			Input.leap(event.dir, event.distance)
+		end
+	end)
 
 	bind("OathAttack", function(state)
 		if mouseFree then
@@ -169,13 +201,13 @@ function Input.start()
 		end
 	end, Enum.KeyCode.F)
 
-	local classKeys = { [Enum.KeyCode.One] = 1, [Enum.KeyCode.Two] = 2, [Enum.KeyCode.Three] = 3 }
+	local classKeys = { [Enum.KeyCode.One] = 1, [Enum.KeyCode.Two] = 2, [Enum.KeyCode.Three] = 3, [Enum.KeyCode.Four] = 4 }
 	ContextActionService:BindActionAtPriority("OathClass", function(_, state, input)
 		if state == Enum.UserInputState.Begin then
 			send(R.CLASS, { class = Kits.ORDER[classKeys[input.KeyCode]] })
 		end
 		return Enum.ContextActionResult.Sink
-	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three)
+	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.One, Enum.KeyCode.Two, Enum.KeyCode.Three, Enum.KeyCode.Four)
 
 	UserInputService.InputBegan:Connect(function(input)
 		if input.KeyCode == Enum.KeyCode.LeftAlt then

@@ -28,6 +28,18 @@ None of these have been playtested.
 | Cleave cone 120 degrees, range 12 | `Kits/Warden.luau` | The kit says "frontal" only. |
 | Intercept range 40 studs, targets the lowest-HP ally, guard waits 4 s | `Kits/Warden.luau` | The kit says "dash to an ally and take the next hit" only. |
 | Everyone can block and parry, with the Warden's Stamina numbers | `Constants` | The GDD controls give block and parry to every class, but only the Warden kit lists Stamina. |
+| The whole Ranger kit: Focus 100, +12/s, +4 per Quick Shot; Quick Shot 0.7 coeff, 0.35 s wind-up, 140 studs/s; Aimed Shot 2.2, 0.9 s, 220 studs/s, 15 Focus; Piercing Arrow 1.6, 8 s, 25 Focus; Volley 1.1 in a 10-stud circle, lands 0.6 s after release, 14 s, 35 Focus; Disengage 22 studs back, 0.3 s untouchable, 12 s | `Kits/Ranger.luau` | The Ranger (base class for Marksman, Beastmaster and Druid) is not in the placeholder kit table yet. |
+| Arrow drop 30 studs/s², reach 1.3x range, hit radius +1 stud | `server/Projectiles.luau` | Feel values; arrows lead their target for the drop. |
+
+## Animation feel
+
+| Value | Where | Why it was needed |
+|---|---|---|
+| Combat animations play at 0.75x to 1x, strike timed to the hit | `server/Animations.luau` | Playtest feedback: squeezing whole animations into short actions looked rushed. |
+| Hit-stop 0.06 s, 0.11 s on crits and slow attacks | `server/Animations.luau` | Feel value: the swing pauses as it connects. |
+| Flinch at 1.2x, skipped mid-swing or while blocking | `server/Animations.luau` | A flinch must not cut an attack whose hit still lands. |
+| Camera shake 0.25 degrees on heavy hits dealt, 0.6 on hits over 15% of your HP | `client/Effects.luau` | Feel value. |
+| Walk cycle matched to 14.5 studs/s (about 1.1x at walk speed 16) | `client/Locomotion.luau` | Playtest feedback: 1.33x looked hurried. |
 
 ## Boss (Ashen Sentinel)
 
