@@ -1,4 +1,4 @@
--- Oathbound prototype client: input and HUD. The server decides every outcome.
+-- Oathbound prototype client: input, HUD and movement animations. The server decides every outcome.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -7,9 +7,11 @@ local Net = require(Shared.Net)
 
 local Input = require(script.Input)
 local Hud = require(script.Hud)
+local Locomotion = require(script.Locomotion)
 
 Hud.start()
 Input.start()
+Locomotion.start()
 
 local remotes = ReplicatedStorage:WaitForChild(Net.FOLDER)
 local stateRemote = remotes:WaitForChild(Net.STATE) :: RemoteEvent

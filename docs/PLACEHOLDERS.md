@@ -51,3 +51,9 @@ These are in the design but have no defined values yet, so they are not built. I
 - Talents, gear and item modifiers (Phase 2)
 - Revive charges and downed state (Phase 1 respawns you instead)
 - Position rewind for latency (the server checks range with slack instead)
+
+## Animation
+
+| Value | Where | Why it was needed |
+|---|---|---|
+| Run animation from 20 studs/s, 0.2 s fades | `client/Locomotion.luau` | The prototype has no sprint yet, so at the default 16 studs/s the walk cycle plays. |

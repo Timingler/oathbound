@@ -31,6 +31,8 @@ rojo serve             # then connect from the Rojo plugin in Studio
 2. Run `rojo serve` in this folder and press **Connect** in the plugin.
 3. Press **Play**. The arena builds itself when the server starts.
 
+Set **Game Settings > Avatar > Avatar Type** to **R6** to see the movement animations. They are R6 only.
+
 To build a place file without Studio running: `rojo build -o oathbound.rbxl`.
 
 ### Testing alone
@@ -83,7 +85,7 @@ docs/          Placeholder register
 
 Still to do in Phase 1, from the GDD roadmap:
 
-- Animations and hit effects (the prototype has floating numbers only)
+- Attack animations and hit effects (the prototype has floating numbers only; walk, run and idle use the R6 Run System kit, see [docs/ASSETS.md](docs/ASSETS.md))
 - Position rewind, so the server judges hits where players were when they acted
 - Downed state and revive charges in place of respawning
 - Comparing the signature control schemes A, B and C
