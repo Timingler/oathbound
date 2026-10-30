@@ -146,8 +146,45 @@ local function templatesFor(key: string)
 	return cached
 end
 
--- Plays a particle effect once at `position`.
-function Effects.vfx(key: string, position: Vector3?)
+local GROUND_PROBE = 12 -- studs below a character's root to look for the floor
+local GROUND_LIFT = 0.15 -- keeps a circle from z-fighting with the floor
+
+-- The floor under `position`, skipping characters and other effects. Spell circles sit here instead of at the
+-- character's root, which is in the middle of the body.
+function Effects.ground(position: Vector3): Vector3
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	local skip = {}
+	params.FilterDescendantsInstances = skip
+	local origin = position + Vector3.new(0, 1, 0)
+	for _ = 1, 6 do
+		local hit = workspace:Raycast(origin, Vector3.new(0, -GROUND_PROBE, 0), params)
+		if not hit then
+			break
+		end
+		local model = hit.Instance:FindFirstAncestorOfClass("Model")
+		if model and model:FindFirstChildOfClass("Humanoid") then
+			table.insert(skip, model)
+		elseif hit.Instance.CanCollide or hit.Instance:IsA("Terrain") then
+			return hit.Position + Vector3.new(0, GROUND_LIFT, 0)
+		else
+			table.insert(skip, hit.Instance)
+		end
+		params.FilterDescendantsInstances = skip
+	end
+	return position - Vector3.new(0, 3, 0) -- an R6 root is 3 studs above the feet
+end
+
+local function scaleSize(emitter: ParticleEmitter, scale: number)
+	local keypoints = {}
+	for _, k in emitter.Size.Keypoints do
+		table.insert(keypoints, NumberSequenceKeypoint.new(k.Time, k.Value * scale, k.Envelope * scale))
+	end
+	emitter.Size = NumberSequence.new(keypoints)
+end
+
+-- Plays a particle effect once at `position`. `scale` grows the particles (a wide circle for an area spell).
+function Effects.vfx(key: string, position: Vector3?, scale: number?)
 	if not position then
 		return
 	end
@@ -161,6 +198,9 @@ function Effects.vfx(key: string, position: Vector3?)
 		attachment.Parent = workspace.Terrain
 		for _, emitter in attachment:GetChildren() do
 			if emitter:IsA("ParticleEmitter") then
+				if scale and scale ~= 1 then
+					scaleSize(emitter, scale)
+				end
 				local count = emitter:GetAttribute("EmitCount") or 1
 				local delay = emitter:GetAttribute("EmitDelay") or 0
 				if delay > 0 then
@@ -204,10 +244,29 @@ function Effects.onFx(event)
 	local pos = event.pos
 	if t == "swing" then
 		Effects.sfx("swing", pos)
+		if event.ability == "mend" and pos then
+			-- Casting circle under the Cleric while Mend winds up.
+			Effects.vfx("heal", Effects.ground(pos), 1.3)
+			Effects.sfx("bossCast", pos)
+		end
 	elseif t == "hit" then
 		both(if event.blocked then "blockHit" else HIT_EFFECT[event.class] or "slash", pos)
 	elseif t == "heal" then
-		both("heal", pos)
+		-- Circles go on the floor under whoever was healed. Sanctuary draws its own big circle, so its heals only
+		-- add a small one; Smite's side heal is smaller than Mend's.
+		if pos then
+			local size = if event.ability == "mend" then 1.6 elseif event.ability == "sanctuary" then 0.7 else 0.8
+			Effects.vfx("heal", Effects.ground(pos), size)
+		end
+		Effects.sfx("heal", pos)
+	elseif t == "sanctuary" then
+		if pos then
+			local ground = Effects.ground(pos)
+			Effects.vfx("slam", ground)
+			Effects.vfx("heal", ground, math.max(1, (event.radius or 21) / 2.6))
+		end
+		Effects.sfx("bossSlam", pos)
+		Effects.sfx("heal", pos)
 	elseif t == "avoid" then
 		if event.text == "Parry!" then
 			both("parry", pos)

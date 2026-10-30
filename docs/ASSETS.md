@@ -20,7 +20,7 @@ The movement, wall run, climb and bow animations come from four free Creator Sto
 |---|---|---|---|
 | Warden | One-hand sword M1 to M4 | Shield Bash: Hilt Pommel. Cleave: sword skill 2. Intercept: Striking Advance | Sword block |
 | Assassin | Dagger 1 to 4 | Finisher: dagger skill 4. Backstab: assassination. Poison Blade: dagger skill 1 | Dagger block |
-| Cleric | Hammer 1 to 4 | Sanctuary: slam the ground. Mend: "Healing" from REFramework | Sword block |
+| Cleric | Hammer 1 to 4 (Smite: hits the enemy in front and heals the most hurt ally) | Sanctuary: slam the ground. Mend: "Healing" from REFramework | Sword block |
 | Everyone | | Parry: parry 1 and 2, alternating. Dodge: roll | |
 
 The server plays each one when the action goes on the timeline, stretched over its wind-up plus recovery. The Hollow Duelist plays the Warden's set the same way, plus the walk, idle and roll animations. The boss is built from parts, so it is not animated.
@@ -41,7 +41,7 @@ Like vania's WeaponHandler, the server loops a hold pose while the weapon is out
 | Hit taken while blocking | block hit (hxh) | sword block (hxh) |
 | Hit taken | blood hit (vania) | bloody hit (hxh) |
 | Parry | parry burst (vania) | parry, sword clash (hxh) |
-| Heal | small magic circle (vania) | heal, healing (Excry) |
+| Heal, Mend cast, Sanctuary | magic circle on the floor (vania), scaled per spell; Sanctuary adds the furious slam | heal, healing (Excry) |
 | Boss Broken | block break (vania) | block break (vania) |
 | Boss Ash Sweep | furious slam (vania) | blunt heavy (vania) |
 | Attack starts, dodge, boss swing, boss cast | | swing, roll, great sword heavy, charge (vania) |

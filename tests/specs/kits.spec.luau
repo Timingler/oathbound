@@ -11,7 +11,7 @@ return function(t)
 	end)
 
 	t.test("every timed ability has wind-up, recovery and a known effect", function()
-		local effects = { strike = true, finisher = true, dot = true, heal = true, areaHeal = true, cleave = true, smokeStep = true, intercept = true }
+		local effects = { strike = true, finisher = true, dot = true, smite = true, heal = true, areaHeal = true, cleave = true, smokeStep = true, intercept = true }
 		for _, name in Kits.ORDER do
 			local kit = Kits[name]
 			local list = {}

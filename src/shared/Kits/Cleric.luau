@@ -1,4 +1,4 @@
--- Cleric (healer): Mend, Sanctuary and healing basic attacks.
+-- Cleric (healer): Mend, Sanctuary and a basic hammer attack that also heals.
 -- Tests Healing Power, Ability Haste, Efficiency and Regeneration.
 -- Divine Grace (heavy attack at full Grace cleanses) is not in the placeholder table, so it is left out.
 
@@ -9,16 +9,19 @@ return {
 	isTank = false,
 	resource = { name = "Faith", pool = 100, regen = 2, start = 100 },
 
+	-- Smite: the hammer hits the enemy in front, and each swing also heals the most hurt ally nearby, so the
+	-- Cleric can fight on its own. The kit table's basic only healed, which left a solo Cleric with no damage.
 	basic = {
 		id = "basic",
-		name = "Basic heal",
-		effect = "heal",
-		coeff = 0.6,
+		name = "Smite",
+		effect = "smite",
+		coeff = 0.55, -- [Proto] a little under the Warden's 0.7
+		healCoeff = 0.35, -- [Proto]
 		windup = 0.40,
 		recovery = 0.30,
-		range = 40, -- [Proto]
+		range = 10,
+		healRange = 40, -- [Proto]
 		gain = 1, -- +1 Faith
-		targeting = "lowestAlly", -- the prototype AI rule from the kit table
 	},
 	heavy = nil,
 	skills = {

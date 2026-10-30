@@ -23,6 +23,7 @@ None of these have been playtested.
 | Mark lasts 10 s | `Kits/Assassin.luau` | The kit says basic attacks apply Mark, with no duration. |
 | Smoke Step usable during a dodge or up to 0.35 s after | `Kits/Assassin.luau` | The kit says "1.0 s untargetable after a dodge" but not how it is triggered. |
 | Heal range 40 studs | `Kits/Cleric.luau` | Not in the kit table. |
+| Smite (Cleric basic) 0.55 damage, 0.35 heal | `Kits/Cleric.luau` | The kit table's basic only healed, so a Cleric had no damage. |
 | Sanctuary radius 21 studs | `Kits/Cleric.luau` | The kit says 6 m; 1 stud is about 0.28 m. |
 | Cleave cone 120 degrees, range 12 | `Kits/Warden.luau` | The kit says "frontal" only. |
 | Intercept range 40 studs, targets the lowest-HP ally, guard waits 4 s | `Kits/Warden.luau` | The kit says "dash to an ally and take the next hit" only. |

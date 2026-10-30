@@ -74,7 +74,7 @@ function Abilities.tryStart(service, actor, def, now: number): (boolean, string?
 	end
 
 	local target = pickTarget(service, actor, def)
-	if def.effect == "strike" or def.effect == "finisher" or def.effect == "dot" then
+	if def.effect == "strike" or def.effect == "smite" or def.effect == "finisher" or def.effect == "dot" then
 		-- A basic attack swings even with nobody in reach, so a click always does something. It whiffs at fire time.
 		if not target and def ~= actor.kit.basic then
 			return false, "no target in range"
@@ -163,6 +163,17 @@ function Abilities.fire(service, actor, def, payload, now: number)
 		if def.interrupts then
 			service.interrupt(actor, target)
 		end
+	elseif effect == "smite" then
+		if def.gain then
+			actor:gainResource(def.gain)
+		end
+		if target then
+			service.strike(actor, target, def.coeff * wd, def)
+		end
+		local ally = service.lowestAlly(actor, def.healRange, false)
+		if ally and ally.health < ally.maxHealth then
+			service.heal(actor, ally, def.healCoeff * wd, def)
+		end
 	elseif effect == "finisher" then
 		local points = actor.combo
 		actor.combo = 0
@@ -194,6 +205,7 @@ function Abilities.fire(service, actor, def, payload, now: number)
 		end
 	elseif effect == "areaHeal" then
 		local allies = service.alliesNear(actor, def.radius, def.maxTargets)
+		service.fx({ t = "sanctuary", src = actor.id, pos = actor:position(), radius = def.radius })
 		for _, ally in allies do
 			service.heal(actor, ally, def.coeff * wd, def)
 		end

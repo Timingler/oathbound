@@ -260,7 +260,15 @@ function CombatService.heal(source, target, amount: number, def)
 		addThreat(boss.actor, source, effective * Constants.HEAL_THREAT_MULT)
 	end
 
-	CombatService.fx({ t = "heal", src = source.id, dst = target.id, amount = effective, crit = crit, pos = target:position() })
+	CombatService.fx({
+		t = "heal",
+		src = source.id,
+		dst = target.id,
+		ability = def and def.id,
+		amount = effective,
+		crit = crit,
+		pos = target:position(),
+	})
 	CombatService.log(
 		source,
 		string.format(
