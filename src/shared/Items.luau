@@ -191,7 +191,7 @@ Items.ARMOR = {
 	},
 	feet = {
 		{ name = "Soft Boots" },
-		{ name = "Tasset Greaves", look = "warriorGreaves" }, -- vania
+		{ name = "Leather Shin Guards", look = "shinGuards" }, -- vania Warrior Greaves leg plates, on the shins
 		{ name = "Iron Sabatons" },
 		{ name = "Marching Boots" },
 		{ name = "Ashen Treads" },

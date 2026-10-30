@@ -99,7 +99,7 @@ Rule for picks: Western medieval fantasy (knight, ranger, priest, rogue, noble);
 | Bandaged Leathers | Excry NpcTemplate |
 | Priest's Cassock | hxh Priest |
 
-**Small 3D pieces** stay, as models in the place under `ServerStorage.OathGear` (save the place to keep them): Leather Gauntlets (hands, vania), Tasset Greaves (feet slot, vania Warrior Greaves), Gold and Silver Necklace and Ragged Scarf (neck, Excry), Fur Mantle (neck, vania OldFur Cloak), Lantern of Vigil (Cleric off-hand, vania). Helmets, hoods and the crown are removed for now; their models are unused in OathGear.
+**Small 3D pieces** stay, as models in the place under `ServerStorage.OathGear` (save the place to keep them): Leather Gauntlets (hands, vania), Leather Shin Guards (feet slot: the leg plates of vania's Warrior Greaves, moved to the shins and re-finished in dark leather), Gold and Silver Necklace and Ragged Scarf (neck, Excry), Fur Mantle (neck, vania OldFur Cloak), Lantern of Vigil (Cleric off-hand, vania). Helmets, hoods and the crown are removed for now; their models are unused in OathGear.
 
 Rejected: the vania Boss Cloak (white veil), Warrior Chausses (oversized); haori, gi and hakama sets, bead necklaces (East Asian); Kurapika, Chrollo, Netero, Feitan outfits (named characters); farmer, bandit, waistcoat, suits, hoodies, jeans, graphic tees, kimono and tactical gear from the remaining Excry, hxh, REFramework and Anime Brigade clothing (modern, sci-fi or East Asian).
 
