@@ -20,6 +20,7 @@
 -- Set the "DamageScale" attribute on the boss model while playing to make it easier for solo tests, and
 -- "SetHealth" (a fraction, e.g. 0.55) to jump to that much HP, to try phase 2.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
@@ -239,6 +240,7 @@ function Boss.build(post: CFrame): Model
 	gui.Parent = head
 
 	model:SetAttribute("DamageScale", 1)
+	CollectionService:AddTag(model, "OathEnemy") -- client/LockOn can lock onto it
 	return model
 end
 

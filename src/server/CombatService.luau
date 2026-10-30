@@ -28,6 +28,8 @@ CombatService.actors = {} :: { [number]: any }
 CombatService.byPlayer = {} :: { [Player]: any }
 CombatService.classOf = {} :: { [Player]: string }
 CombatService.boss = nil
+-- Set by server/Quests: something quests may count happened for `actor` ("hitDummy", "killDuelist").
+CombatService.onEvent = function(_actor, _event: string) end
 -- Hotbar hooks, set by server/Inventory: an attack with a tool out, and putting the tool away.
 CombatService.onToolUse = function(_actor) end
 CombatService.drawWeapon = function(_actor) end
@@ -212,6 +214,9 @@ function CombatService.strike(source, target, amount: number, def, isTick: boole
 
 	if target.kind == "dummy" then
 		meter(source, damage)
+		if not isTick then
+			CombatService.onEvent(source, "hitDummy")
+		end
 	else
 		target.health = math.max(0, target.health - damage)
 		local tankMult = source.isTank and Constants.TANK_THREAT_MULT or 1

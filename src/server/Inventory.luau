@@ -466,6 +466,23 @@ local function handle(player: Player, req)
 	snapshot(player)
 end
 
+local rewardRng = Random.new()
+local REWARD_SLOTS = { "body", "hands", "feet", "neck", "belt", "mainHand" }
+
+-- A reward (server/Quests): one random piece of `rarityId` gear for the player's class, put in their bag.
+-- Returns its name.
+function Inventory.grant(player: Player, rarityId: string): string?
+	local inv = inventories[player]
+	if not inv then
+		return nil
+	end
+	local slot = REWARD_SLOTS[rewardRng:NextInteger(1, #REWARD_SLOTS)]
+	local item = makeItem(inv, rewardRng, slot, rarityId, BASE_ITEM_LEVEL + 5, currentClass(player))
+	add(inv, item)
+	snapshot(player, "Reward: " .. item.name)
+	return item.name
+end
+
 function Inventory.start(combatService)
 	service = combatService
 	-- The held weapon follows the equipped main hand, when it belongs to the class being equipped.

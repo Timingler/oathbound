@@ -6,6 +6,8 @@ return {
 	STATE = "State", -- server -> client: HUD snapshot, about 10 per second
 	FX = "Fx", -- server -> client: hits, heals, log lines
 	INVENTORY = "Inventory", -- both ways: client sends { op = "sync" | "equip" | "unequip" | ... }, server sends the bag
+	DIALOGUE = "Dialogue", -- server -> client: a talk box node or { close = true }; client -> server: { choice = n }
+	QUEST = "Quest", -- server -> client: the quest tracker's list
 
 	-- Request kinds sent on ACTION
 	Request = {

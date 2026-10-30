@@ -7,7 +7,8 @@
 --   Z, X, C                 skills
 --   V                       signature key (Warden Intercept)
 --   F                       ultimate (not built yet)
---   E                       interact (reserved for prompts, dialogue and gathering)
+--   E                       interact: talk to NPCs (client/Dialogue); later gathering
+--   Middle mouse            lock on to the enemy nearest the screen centre (client/LockOn)
 --   Double-tap W            sprint (client/Sprint)
 --   1 to 5                  hotbar (client/Hotbar); F1 to F4 switch class out of combat [Proto]
 --   Left Shift or Left Ctrl toggle the camera lock [Proto]
@@ -26,6 +27,7 @@ local Net = require(Shared.Net)
 local Kits = require(Shared.Kits)
 local Constants = require(Shared.Constants)
 local AssetIds = require(Shared.AssetIds)
+local LockOn = require(script.Parent.LockOn)
 
 local R = Net.Request
 local HEAVY_HOLD = 0.25 -- seconds of holding left click before it counts as a heavy attack [Proto]
@@ -71,6 +73,10 @@ local heavySent = false
 -- carry this point so arrows fly to it and the character turns to face it (server/Projectiles, CombatService).
 local AIM_REACH = 300 -- studs [Proto]
 local function aimPoint(): Vector3?
+	local locked = LockOn.point() -- locked on (middle mouse): aim at the target
+	if locked then
+		return locked
+	end
 	local camera = workspace.CurrentCamera
 	if not camera then
 		return nil
@@ -93,8 +99,8 @@ end
 local AIMED = { [R.BASIC] = true, [R.HEAVY] = true, [R.SKILL] = true, [R.SIGNATURE] = true, [R.ULTIMATE] = true }
 
 local function send(kind: string, extra: { [string]: any }?)
-	if player:GetAttribute("UiOpen") then
-		return -- a full-screen menu (the inventory) has the mouse
+	if player:GetAttribute("UiOpen") or player:GetAttribute("Talking") then
+		return -- a full-screen menu (the inventory) or a talk box (client/Dialogue) has the mouse
 	end
 	if player:GetAttribute("Traversal") and kind ~= R.CLASS then
 		return -- no fighting while climbing or gliding (client/Traversal)
@@ -440,8 +446,8 @@ function Input.start()
 			send(R.HEAVY)
 		end
 
-		-- Camera lock (toggle). A menu that has the mouse (the inventory) overrides it.
-		local uiOpen = player:GetAttribute("UiOpen")
+		-- Camera lock (toggle). A menu or talk box that has the mouse overrides it.
+		local uiOpen = player:GetAttribute("UiOpen") or player:GetAttribute("Talking")
 		if aiming and (uiOpen or not isRanger()) then
 			stopAim()
 		end

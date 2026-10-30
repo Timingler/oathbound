@@ -7,6 +7,7 @@ local Arena = require(script.Arena)
 local ForceR6 = require(script.ForceR6)
 local Duelist = require(script.Duelist)
 local Inventory = require(script.Inventory)
+local Quests = require(script.Quests)
 
 -- Before anyone spawns: every character is R6, which all the animations need.
 ForceR6.start()
@@ -32,3 +33,5 @@ Duelist.new(CombatService, { name = "Hollow Duelist", home = arena.duelistHome }
 
 CombatService.start()
 Inventory.start(CombatService)
+Quests.start(CombatService, Inventory)
+CombatService.onEvent = Quests.event

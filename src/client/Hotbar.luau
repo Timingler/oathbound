@@ -322,7 +322,7 @@ function Hotbar.start(getHovered: () -> any)
 
 	UserInputService.InputBegan:Connect(function(input)
 		local index = KEYS[input.KeyCode]
-		if not index or UserInputService:GetFocusedTextBox() then
+		if not index or UserInputService:GetFocusedTextBox() or player:GetAttribute("Talking") then
 			return
 		end
 		if player:GetAttribute("UiOpen") then

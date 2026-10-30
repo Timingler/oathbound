@@ -16,6 +16,9 @@ local Inventory = require(script.Inventory)
 local Hotbar = require(script.Hotbar)
 local Sprint = require(script.Sprint)
 local Traversal = require(script.Traversal)
+local Dialogue = require(script.Dialogue)
+local LockOn = require(script.LockOn)
+local Footsteps = require(script.Footsteps)
 
 -- No Roblox player list (Tab opens the inventory instead) and no Roblox backpack (the hotbar replaces it).
 pcall(function()
@@ -29,6 +32,10 @@ Input.start()
 Locomotion.start()
 task.spawn(Sprint.start) -- waits for its remote
 task.spawn(Traversal.start) -- waits for the same remote
+task.spawn(Dialogue.start) -- waits for its remotes
+LockOn.start()
+Footsteps.setShake(Effects.shake)
+Footsteps.start()
 task.spawn(Inventory.start) -- waits for its remote
 task.spawn(Hotbar.start, Inventory.hovered) -- waits for the same remote
 

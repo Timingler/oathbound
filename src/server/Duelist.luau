@@ -11,6 +11,7 @@
 --
 -- Every number here is [Proto]: none of it is in the design docs.
 
+local CollectionService = game:GetService("CollectionService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -150,6 +151,7 @@ function Duelist:spawn()
 	local actor = self.actor
 	local model = Players:CreateHumanoidModelFromDescription(description(self.passive), Enum.HumanoidRigType.R6)
 	model.Name = self.name
+	CollectionService:AddTag(model, "OathEnemy") -- client/LockOn can lock onto it
 	local animate = model:FindFirstChild("Animate")
 	if animate then
 		animate:Destroy() -- a LocalScript; this rig is animated from here
@@ -373,6 +375,9 @@ function Duelist:die(now: number)
 	self.stateEnds = now + Duelist.RESPAWN
 	actor.dead = true
 	self.humanoid.Health = 0 -- goes limp (server/Ragdoll)
+	if self.target then
+		self.service.onEvent(self.target, "killDuelist") -- whoever it was fighting (server/Quests)
+	end
 	self.fill.Size = UDim2.fromScale(0, 1)
 	for _, p in self.service.living("players") do
 		if self.service.inRange(actor, p, Duelist.LEASH_RANGE) then

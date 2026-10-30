@@ -114,3 +114,12 @@ These are in the design but have no defined values yet, so they are not built. I
 | Climb 8 studs/s up and down, 6 sideways; grab walls at least 7 studs tall; walking into one grabs after 0.3 s, jumping into one at once | Our own R6 climb; the library's is R15 only. |
 | Glide 30 studs/s forward, sinking 7 studs/s, turning toward the camera at 2.5/s | Feel values for the cloak glide. |
 | Test mesa (26 x 32 x 26) and ledge west of the spawn | Something to climb and glide from in the arena. |
+
+## Interaction, lock-on and footsteps
+
+| Value | Where | Why it was needed |
+|---|---|---|
+| Talk range 10 studs, the talk closes past 16 | `server/Quests.luau` | Feel values. |
+| The Arena Trial: 10 dummy hits, climb the mesa, defeat the Duelist; reward one Rare item | `shared/Quests.luau` | A first quest to try the system; placeholder writing. Quest progress is not saved yet. |
+| Lock-on range 70 studs, lets go at 90, target within 45 degrees of the screen centre | `client/LockOn.luau` | Feel values. |
+| One footstep per 3.6 studs (scaled by rig size), heard within 80 studs | `client/Footsteps.luau` | Replaces Roblox's looping run sound with stride-timed steps. |

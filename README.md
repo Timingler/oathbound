@@ -54,7 +54,8 @@ The boss is tuned for a group, so it will flatten one player. While playing, sel
 | Z, X, C | Skills |
 | V | Signature key (Warden's Intercept) |
 | F | Ultimate (not built yet) |
-| E | Interact (reserved for prompts, dialogue and gathering) |
+| E | Interact: talk to NPCs (Sergeant Aldric by the spawn gives the Arena Trial quest; pick answers with 1 to 4 or the mouse) |
+| Middle mouse | Lock on to the enemy nearest the screen centre: the camera and your character follow it and attacks aim at it. Press again to let go |
 | F1 to F4 | Switch to Assassin, Cleric, Warden or Ranger (out of combat) |
 | 1 to 5 | Hotbar: take out what is in that slot (your weapon, or a tool like the pickaxe or torch). Press a tool's key again to put it away; skills draw the weapon on their own |
 | Left Shift or Left Ctrl | Toggle camera lock (off by default): hides the cursor and turns you with the camera |

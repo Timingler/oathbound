@@ -68,10 +68,13 @@ function Hud.start()
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = true
 	gui.Parent = player:WaitForChild("PlayerGui")
-	-- The inventory screen (client/Inventory) covers the whole view; the combat HUD would show through it.
-	player:GetAttributeChangedSignal("UiOpen"):Connect(function()
-		gui.Enabled = not player:GetAttribute("UiOpen")
-	end)
+	-- The inventory screen (client/Inventory) covers the whole view and the talk box (client/Dialogue) sits over
+	-- the bars; the combat HUD would show through either.
+	local function refresh()
+		gui.Enabled = not player:GetAttribute("UiOpen") and not player:GetAttribute("Talking")
+	end
+	player:GetAttributeChangedSignal("UiOpen"):Connect(refresh)
+	player:GetAttributeChangedSignal("Talking"):Connect(refresh)
 
 	-- Boss, top centre
 	ui.bossName = label(gui, { Position = UDim2.new(0.5, -250, 0, 18), Size = UDim2.fromOffset(500, 20), Font = Enum.Font.GothamBold, TextSize = 16 })
@@ -107,7 +110,7 @@ function Hud.start()
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextSize = 12,
 		TextWrapped = true,
-		Text = "LMB tap: basic   LMB hold: heavy   RMB hold: block (first 200 ms parries)\nQ: dash   Z / X / C: skills   V: Intercept (Warden)   F: ultimate (later)\nSpace: jump; into a wall to climb, again in the air to glide   Double-tap W: sprint\nE: interact   1 to 5: hotbar   F1 to F4: Assassin, Cleric, Warden, Ranger\nShift or Ctrl: toggle camera lock   I: inventory",
+		Text = "LMB tap: basic   LMB hold: heavy   RMB hold: block (first 200 ms parries)\nQ: dash   Z / X / C: skills   V: Intercept (Warden)   F: ultimate (later)\nSpace: jump; into a wall to climb, again in the air to glide   Double-tap W: sprint\nE: interact   MMB: lock on   1 to 5: hotbar   F1 to F4: Assassin, Cleric, Warden, Ranger\nShift or Ctrl: toggle camera lock   I: inventory",
 	})
 	ui.class = label(gui, { Position = UDim2.fromOffset(12, 36), Size = UDim2.fromOffset(330, 20), TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.GothamBold, TextSize = 16 })
 
