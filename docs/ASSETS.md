@@ -23,7 +23,7 @@ The movement, wall run, climb and bow animations come from four free Creator Sto
 | Cleric | Hammer 1 to 4 | Sanctuary: slam the ground. Mend: "Healing" from REFramework | Sword block |
 | Everyone | | Parry: parry 1 and 2, alternating. Dodge: roll | |
 
-The server plays each one when the action goes on the timeline, stretched over its wind-up plus recovery. The boss and dummy are built from parts, so they are not animated.
+The server plays each one when the action goes on the timeline, stretched over its wind-up plus recovery. The Hollow Duelist plays the Warden's set the same way, plus the walk, idle and roll animations. The boss is built from parts, so it is not animated.
 
 ### Weapons
 

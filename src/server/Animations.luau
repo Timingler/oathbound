@@ -1,7 +1,7 @@
 -- Plays class combat animations on player characters. The server decides when an action starts, so it plays the
 -- animation too; tracks played through the character's Animator replicate to every client.
 -- Each animation is stretched over the action's wind-up plus recovery, so it lines up with the timeline.
--- R6 only (the animations are R6). The boss and dummy are part models and are not animated yet.
+-- R6 only (the animations are R6). Also plays for the Duelist NPCs; the boss is a part model and is not animated.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -24,7 +24,7 @@ local states: { [Model]: any } = setmetatable({}, { __mode = "k" }) :: any
 local combos: { [any]: { index: number, last: number } } = setmetatable({}, { __mode = "k" }) :: any
 
 local function stateFor(actor)
-	if actor.kind ~= "player" or not actor.model then
+	if (actor.kind ~= "player" and actor.kind ~= "npc") or not actor.model then
 		return nil
 	end
 	local state = states[actor.model]

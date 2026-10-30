@@ -1,5 +1,5 @@
 -- Builds the test arena from code, so the repo needs no place file: a floor, a spawn,
--- the Ashen Sentinel boss and a training dummy. Placeholder blocks until real art exists.
+-- the Ashen Sentinel boss, and posts for the training dummy and the duelist. Placeholder blocks until real art exists.
 
 local Arena = {}
 
@@ -82,26 +82,13 @@ function Arena.build()
 	boss:PivotTo(bossHome)
 	boss.Parent = folder
 
-	-- Training dummy: never attacks, measures your damage.
-	local dummy = Instance.new("Model")
-	dummy.Name = "Training Dummy"
-	local dummyBody = part({
-		Name = "Body",
-		Size = Vector3.new(4, 7, 4),
-		Color = Color3.fromRGB(160, 130, 90),
-		Material = Enum.Material.Wood,
-		Parent = dummy,
-	})
-	dummy.PrimaryPart = dummyBody
-	nameTag(dummyBody, "Training Dummy", 5.5)
-	dummy:PivotTo(CFrame.lookAt(Vector3.new(-40, 3.5, -20), Vector3.new(0, 3.5, -40)))
-	dummy.Parent = folder
-
 	folder.Parent = workspace
 	return {
 		boss = boss,
 		bossHome = bossHome,
-		dummy = dummy,
+		-- The training dummy and the duelist are R6 rigs built by server/Duelist; these are their posts.
+		dummyHome = CFrame.lookAt(Vector3.new(-40, 3.1, -20), Vector3.new(0, 3.1, -40)),
+		duelistHome = CFrame.lookAt(Vector3.new(40, 3.1, -20), Vector3.new(0, 3.1, -40)),
 	}
 end
 

@@ -13,7 +13,8 @@ The first slice tests whether the combat feels good:
 - **One-action timeline** on the server: wind-up, fire, recovery, in 50 ms ticks. Dodging cancels a wind-up and costs nothing.
 - **Block, parry and dodge.** Attack colours tell you what works: white (anything), orange (dodge or parry), red (dodge or move).
 - **The Ashen Sentinel**, a test boss with a white swing, an orange tank-buster, a red sweep and an interruptible cast. It also has a Break meter: parries and interrupts fill it, and a full meter stuns the boss for 3 seconds.
-- **A training dummy** that measures your damage per second, shown as a multiple of Weapon Damage (the design's reference target is 4 x WD).
+- **The Hollow Duelist**, an animated R6 swordsman with AI (`server/Duelist.luau`), to the right of the spawn. It walks to you and swings telegraphed combos: white-outlined slashes (block, parry or dodge) and, every third combo, a slow orange-outlined thrust (parry or dodge). It blocks some of your attacks from the front, rolls away when you pile on hits, and is staggered for 1.2 seconds when you parry it. When it dies, a new one steps up after 8 seconds.
+- **A training dummy** to the left of the spawn that measures your damage per second, shown as a multiple of Weapon Damage (the design's reference target is 4 x WD). It is an R6 figure that turns to face you but never fights back.
 
 Every number is a placeholder. The values the design docs did not give are listed in [docs/PLACEHOLDERS.md](docs/PLACEHOLDERS.md). **Nothing here has been playtested yet.**
 

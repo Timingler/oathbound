@@ -169,7 +169,7 @@ function Hud.onFx(event)
 		floatText(event.pos, "+" .. fmt(event.amount), Color3.fromRGB(90, 230, 110))
 	elseif t == "hurt" and event.dst == myId then
 		floatText(event.pos, "-" .. fmt(event.amount), Color3.fromRGB(255, 80, 80))
-	elseif t == "avoid" and event.dst == myId then
+	elseif t == "avoid" and (event.dst == myId or event.src == myId) then
 		floatText(event.pos, event.text, Color3.fromRGB(150, 210, 255))
 	elseif t == "broken" then
 		Hud.addLog("The boss is BROKEN: 3 s free hits")

@@ -205,7 +205,7 @@ function Effects.onFx(event)
 	if t == "swing" then
 		Effects.sfx("swing", pos)
 	elseif t == "hit" then
-		both(HIT_EFFECT[event.class] or "slash", pos)
+		both(if event.blocked then "blockHit" else HIT_EFFECT[event.class] or "slash", pos)
 	elseif t == "heal" then
 		both("heal", pos)
 	elseif t == "avoid" then

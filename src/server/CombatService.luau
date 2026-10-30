@@ -26,6 +26,7 @@ CombatService.byPlayer = {} :: { [Player]: any }
 CombatService.classOf = {} :: { [Player]: string }
 CombatService.boss = nil
 CombatService.dummy = nil
+CombatService.npcs = {} -- Duelists (and the dummy), stepped every tick
 CombatService.meters = {} -- training dummy meters: actor id -> { first, last, total }
 
 local queues = {} :: { [Player]: { any } }
@@ -185,7 +186,20 @@ function CombatService.strike(source, target, amount: number, def, isTick: boole
 		mult, crit = Formulas.rollCrit(source.stats.critChance, source.stats.critMult, rng:NextNumber())
 	end
 	local damage = amount * mult * Formulas.outgoingMultiplier(nil)
-	damage *= 1 - Formulas.totalDR({ passive = target.enemyDR or 0 })
+	local blocked = false
+	if target.kind == "npc" then
+		-- Duelists defend like players: a roll avoids the hit, a block from the front takes most of it.
+		if target:isUntouchable(now) then
+			CombatService.fx({ t = "avoid", src = source.id, dst = target.id, text = "Dodged", pos = target:position() })
+			return
+		end
+		local sp, tp = source:position(), target:position()
+		if target.blocking and sp and tp then
+			local toSource = flat(sp - tp)
+			blocked = toSource.Magnitude < 0.01 or flat(target:lookVector()).Unit:Dot(toSource.Unit) > 0.2
+		end
+	end
+	damage *= 1 - Formulas.totalDR({ passive = target.enemyDR or 0, block = blocked and Constants.BLOCK_DR or 0 })
 
 	source.lastCombat = now
 	target.lastCombat = now
@@ -210,10 +224,11 @@ function CombatService.strike(source, target, amount: number, def, isTick: boole
 		crit = crit,
 		pos = pos,
 		class = source.kit and source.kit.id,
+		blocked = blocked,
 	})
 	CombatService.log(
 		source,
-		string.format("%s hit %s for %s%s", def.name, target.name, fmt(damage), crit and " (crit)" or "")
+		string.format("%s hit %s for %s%s%s", def.name, target.name, fmt(damage), crit and " (crit)" or "", blocked and " (blocked)" or "")
 	)
 end
 
@@ -495,6 +510,9 @@ local function tick()
 	-- 1. Incoming damage: enemy AI, then damage over time.
 	if CombatService.boss then
 		CombatService.boss:step(now)
+	end
+	for _, npc in CombatService.npcs do
+		npc:step(now)
 	end
 	for _, actor in CombatService.actors do
 		for key, dot in actor.dots do
