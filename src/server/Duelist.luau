@@ -207,6 +207,9 @@ function Duelist:spawn()
 end
 
 function Duelist:setMove(name: string?, rate: number)
+	if name == "Idle" and self.actor.model:GetAttribute("WeaponHold") then
+		name = nil -- the weapon hold (server/Weapons) owns the standing pose, as in client/Locomotion
+	end
 	if self.moving ~= name then
 		if self.moving then
 			self.moves[self.moving]:Stop(0.2)
