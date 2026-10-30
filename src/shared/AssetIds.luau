@@ -105,11 +105,10 @@ AssetIds.Combat = {
 
 -- Weapon hold poses from the vania place (its WeaponHandler loops one per weapon type), keyed by kit. R6 only.
 -- They raise the arm so the weapon sits in the hand; without one the arm hangs and the weapon sticks out of the hip.
--- 0 = not uploaded yet. The KeyframeSequences are in the place under ServerStorage.OathHolds (see docs/ASSETS.md).
 AssetIds.Hold = {
-	Warden = 0, -- "idle 1 hand"
-	Assassin = 0, -- "Dagger idle"
-	Cleric = 0, -- "greatsword idle": vania has no hammer idle; this one rests the hammer on the shoulder
+	Warden = 77132799404420, -- "idle 1 hand"
+	Assassin = 134201934974804, -- "Dagger idle"
+	Cleric = 92760080918876, -- "greatsword idle": vania has no hammer idle; this one rests the hammer on the shoulder
 }
 
 -- Combat sounds from the vania, hxh and Excry places, played by client/Effects.luau. Short sound effects are public
