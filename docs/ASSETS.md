@@ -20,10 +20,14 @@ The movement, wall run, climb and bow animations come from four free Creator Sto
 |---|---|---|---|
 | Warden | One-hand sword M1 to M4 | Shield Bash: Hilt Pommel. Cleave: sword skill 2. Intercept: Striking Advance | Sword block |
 | Assassin | Dagger 1 to 4 | Finisher: dagger skill 4. Backstab: assassination. Poison Blade: dagger skill 1 | Dagger block |
-| Cleric | Hammer 1 to 4 | Sanctuary: slam the ground. Mend has no animation yet | Sword block |
+| Cleric | Hammer 1 to 4 | Sanctuary: slam the ground. Mend: "Healing" from REFramework | Sword block |
 | Everyone | | Parry: parry 1 and 2, alternating. Dodge: roll | |
 
 The server plays each one when the action goes on the timeline, stretched over its wind-up plus recovery. The boss and dummy are built from parts, so they are not animated.
+
+### Weapons
+
+`server/Weapons.luau` puts vania's weapon models in each class's right hand: the Mika sword (Warden), Long Dagger (Assassin) and Great Hammer (Cleric). The animations were made on vania's rig, which moves a `Hilt` part joined to the Right Arm, so the weapon is welded to a Hilt joined the same way. `tools/reupload/weapons.py` generates `src/shared/WeaponLibrary.luau`. The Mika sword uses a SurfaceAppearance in vania, which scripts cannot copy, so it shows plain colours here.
 
 ### VFX and sounds
 
@@ -35,7 +39,7 @@ The server plays each one when the action goes on the timeline, stretched over i
 | Hit taken while blocking | block hit (hxh) | sword block (hxh) |
 | Hit taken | blood hit (vania) | bloody hit (hxh) |
 | Parry | parry burst (vania) | parry, sword clash (hxh) |
-| Heal | small magic circle (vania) | heal (vania) |
+| Heal | small magic circle (vania) | heal, healing (Excry) |
 | Boss Broken | block break (vania) | block break (vania) |
 | Boss Ash Sweep | furious slam (vania) | blunt heavy (vania) |
 | Attack starts, dodge, boss swing, boss cast | | swing, roll, great sword heavy, charge (vania) |
@@ -46,8 +50,8 @@ The server plays each one when the action goes on the timeline, stretched over i
 |---|---|
 | vania, hxh, CHAIN, jjk cool map | Cleared by Charles. vania (gothic fantasy) is the best match; CHAIN is horror; jjk is a map only |
 | Quirkbound, Newest Ghoul RE, New moon | Not used. Their scripts carry "Saved by UniversalSynSaveInstance (Join to Copy Games)" and decompiler stamps, so they were copied from live games with an exploit |
-| HAV DEV SERVER | Not used yet. Two scripts carry decompiler/Synapse stamps |
-| Excry Main Game, Cursed Reality, BATTLECOMBATR6, Anime Brigade, REFrameworkV2 | No exploit stamps or licence notes. Not used until Charles confirms where they came from. Excry has the most fantasy-fitting sounds and VFX |
+| HAV DEV SERVER | Not used. Two small scripts (menu, quotes) are decompiled; the rest looks original |
+| Excry Main Game, Cursed Reality, BATTLECOMBATR6, Anime Brigade, REFrameworkV2 | Cleared by Charles. Used: REFramework's Healing animation, Excry's heal, stab and boss sounds |
 
 **Credit:** the Run System's licence asks for "Run and Walk System by @skaterstudios" in the game description. Add it before publishing.
 

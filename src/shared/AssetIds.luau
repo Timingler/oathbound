@@ -59,7 +59,7 @@ AssetIds.BowSounds = {
 	Cancel = 111342790429258,
 }
 
--- Combat animations from the vania place, keyed by kit and ability id. R6 only. `length` is in seconds, so the
+-- Combat animations from the vania place (Cleric Mend from REFramework), keyed by kit and ability id. R6 only. `length` is in seconds, so the
 -- server can stretch each one over the action's wind-up and recovery. basic = the 4-hit combo, played in turn.
 AssetIds.Combat = {
 	Warden = {
@@ -108,16 +108,16 @@ AssetIds.Combat = {
 AssetIds.Sfx = {
 	swing = { 4898257652, 4898262512 },
 	slash = { 3932145654, 3932145123, 3932142219, 3932141920 },
-	stab = { 4471648128 },
+	stab = { 4471648128, 2017482557 },
 	blunt = { 12327206250, 12327206688, 12327207277 },
 	blockHit = { 604798957, 604238471, 604800072 },
 	parry = { 4516507682, 4953118406, 4953118940 },
 	guardBreak = { 4898185564 },
 	hurt = { 3739363791, 4086189694, 4086190131 },
-	heal = { 12350726490 },
+	heal = { 2017454590, 9038523649 },
 	dodge = { 12076648787 },
-	bossSwing = { 12548800970 },
-	bossSlam = { 12826036518 },
+	bossSwing = { 6589514393 },
+	bossSlam = { 5540424854, 12826036518 },
 	bossCast = { 6856435312 },
 }
 
