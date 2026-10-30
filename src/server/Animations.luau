@@ -14,7 +14,7 @@ local Animations = {}
 local FADE = 0.08 -- seconds [Proto]
 local COMBO_RESET = 1.5 -- seconds without a basic attack before the combo starts again at hit 1 [Proto]
 local MIN_RATE = 0.5
-local MAX_RATE = 3
+local MAX_RATE = 1 -- never faster than authored: sped-up swings read as twitchy (playtest feedback) [Proto]
 
 type Entry = { id: number, length: number }
 
