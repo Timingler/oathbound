@@ -3,8 +3,8 @@
 -- An arrow is simulated here, not as a part: each tick it moves along a ballistic arc and checks the segment it
 -- covered against every enemy, so fast arrows cannot pass through anyone between ticks. Clients draw it from the
 -- "arrow" Fx event with the same arc (client/Effects), and remove it on "arrowEnd".
--- The Ranger aims softly: at the enemy it faces within range if there is one (leading for the drop), else straight
--- ahead where the camera points.
+-- The Ranger aims where the player points (the crosshair, or the mouse with the camera free), homing onto an enemy
+-- only when it is within a few degrees of that, and leading for the drop.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -17,6 +17,7 @@ Projectiles.GRAVITY = 30 -- studs per second squared, a gentle drop [Proto]
 local MUZZLE = CFrame.new(-0.5, 1, -2) -- from the root: the bow, held in the left hand [Proto]
 local HIT_PADDING = 1.0 -- studs added to an enemy's radius, roughly a character's half-width [Proto]
 local DEFAULT_RADIUS = 1.5
+local SOFT_LOCK = 12 -- degrees between your aim and an enemy for the arrow to home onto it [Proto]
 
 local arrows = {}
 local delayed = {}
@@ -42,13 +43,22 @@ function Projectiles.fireArrow(service, actor, def, target)
 	end
 	local origin = (root.CFrame * MUZZLE).Position
 	local aimPoint
-	if target and target:isAlive() then
+	local aimed = actor.aimPoint -- under the player's crosshair or mouse (CombatService)
+	local onTarget = target and target:isAlive()
+	if aimed and (aimed - origin).Magnitude > 3 then
+		-- Soft lock only when the target is close to where you aim; otherwise the arrow goes where you point.
+		if onTarget then
+			local toTarget = (target:position() :: Vector3) - origin
+			onTarget = (aimed - origin).Unit:Dot(toTarget.Unit) >= math.cos(math.rad(SOFT_LOCK))
+		end
+		aimPoint = if onTarget then target:position() :: Vector3 else aimed
+	elseif onTarget then
 		aimPoint = target:position() :: Vector3
 	else
 		aimPoint = origin + flat(actor:lookVector()).Unit * def.range
 	end
-	-- Lead for the drop: aim above the target by the distance the arrow falls on the way.
-	local flight = (aimPoint - origin).Magnitude / def.speed
+	-- Lead for the drop: aim above the point by the distance the arrow falls on the way (within its range).
+	local flight = math.min((aimPoint - origin).Magnitude, def.range) / def.speed
 	aimPoint += Vector3.new(0, 0.5 * Projectiles.GRAVITY * flight * flight, 0)
 	local velocity = (aimPoint - origin).Unit * def.speed
 

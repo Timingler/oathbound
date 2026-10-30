@@ -467,6 +467,8 @@ end
 
 local R = Net.Request
 
+local AIM_REACH = 320 -- studs; the client aims up to 300 away [Proto]
+
 local function handleRequest(actor, req)
 	local now = CombatService.now
 	local kind = req.kind
@@ -477,6 +479,15 @@ local function handleRequest(actor, req)
 	end
 	if actor.dead then
 		return
+	end
+	-- Where the player is aiming (client/Input sends the point under the crosshair or mouse). Arrows and Volley
+	-- go there. Ignored if it is not a point or is unreasonably far away.
+	local aim = req.aim
+	local pos = actor:position()
+	if typeof(aim) == "Vector3" and pos and aim == aim and (aim - pos).Magnitude <= AIM_REACH then
+		actor.aimPoint = aim
+	else
+		actor.aimPoint = nil
 	end
 
 	if kind == R.DODGE then

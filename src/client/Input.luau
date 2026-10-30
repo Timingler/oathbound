@@ -44,6 +44,31 @@ local crosshair: Frame? = nil
 local lmbDownAt: number? = nil
 local heavySent = false
 
+-- Where you are aiming: under the crosshair while the camera is locked, under the mouse while it is free. Attacks
+-- carry this point so arrows fly to it and the character turns to face it (server/Projectiles, CombatService).
+local AIM_REACH = 300 -- studs [Proto]
+local function aimPoint(): Vector3?
+	local camera = workspace.CurrentCamera
+	if not camera then
+		return nil
+	end
+	local ray
+	if mouseFree then
+		local m = UserInputService:GetMouseLocation()
+		ray = camera:ViewportPointToRay(m.X, m.Y)
+	else
+		local size = camera.ViewportSize
+		ray = camera:ViewportPointToRay(size.X / 2, size.Y / 2)
+	end
+	local params = RaycastParams.new()
+	params.FilterType = Enum.RaycastFilterType.Exclude
+	params.FilterDescendantsInstances = { player.Character :: Instance }
+	local result = workspace:Raycast(ray.Origin, ray.Direction * AIM_REACH, params)
+	return if result then result.Position else ray.Origin + ray.Direction * AIM_REACH
+end
+
+local AIMED = { [R.BASIC] = true, [R.HEAVY] = true, [R.SKILL] = true, [R.SIGNATURE] = true, [R.ULTIMATE] = true }
+
 local function send(kind: string, extra: { [string]: any }?)
 	if player:GetAttribute("UiOpen") then
 		return -- a full-screen menu (the inventory) has the mouse
@@ -52,6 +77,22 @@ local function send(kind: string, extra: { [string]: any }?)
 	if extra then
 		for k, v in extra do
 			req[k] = v
+		end
+	end
+	if AIMED[kind] then
+		local point = aimPoint()
+		if point then
+			req.aim = point
+			-- With the camera free the character faces where it walks; turn it to the target so the swing goes
+			-- where you clicked. (Locked, it already faces the camera.)
+			local character = player.Character
+			local root = character and character:FindFirstChild("HumanoidRootPart") :: BasePart?
+			if mouseFree and root then
+				local flat = Vector3.new(point.X - root.Position.X, 0, point.Z - root.Position.Z)
+				if flat.Magnitude > 0.5 then
+					root.CFrame = CFrame.lookAt(root.Position, root.Position + flat)
+				end
+			end
 		end
 	end
 	actionRemote:FireServer(req)
@@ -167,13 +208,15 @@ function Input.start()
 		end
 	end, Enum.UserInputType.MouseButton1)
 
-	bind("OathBlock", function(state)
+	-- Passed on as well as handled: with the camera free, right-drag still turns the camera while you block.
+	ContextActionService:BindActionAtPriority("OathBlock", function(_, state)
 		if state == Enum.UserInputState.Begin then
 			send(R.BLOCK_START)
 		elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
 			send(R.BLOCK_END)
 		end
-	end, Enum.UserInputType.MouseButton2)
+		return if mouseFree then Enum.ContextActionResult.Pass else Enum.ContextActionResult.Sink
+	end, false, Enum.ContextActionPriority.High.Value, Enum.UserInputType.MouseButton2)
 
 	-- Space is jump by default; sinking it here turns it into dodge.
 	bind("OathDodge", function(state)

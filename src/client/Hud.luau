@@ -106,12 +106,7 @@ function Hud.start()
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextSize = 12,
 		TextWrapped = true,
-		Text = "LMB tap: basic   LMB hold: heavy
-RMB hold: block (first 200 ms parries)
-Space: dodge   Q / E / R: skills
-T: Intercept (Warden)   F: ultimate (later)
-1 Assassin   2 Cleric   3 Warden   4 Ranger (out of combat)
-Shift or Ctrl: toggle camera lock   I: inventory",
+		Text = "LMB tap: basic   LMB hold: heavy\nRMB hold: block (first 200 ms parries)\nSpace: dodge   Q / E / R: skills\nT: Intercept (Warden)   F: ultimate (later)\n1 Assassin   2 Cleric   3 Warden   4 Ranger (out of combat)\nShift or Ctrl: toggle camera lock   I: inventory",
 	})
 	ui.class = label(gui, { Position = UDim2.fromOffset(12, 36), Size = UDim2.fromOffset(330, 20), TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.GothamBold, TextSize = 16 })
 

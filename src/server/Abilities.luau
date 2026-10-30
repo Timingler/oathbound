@@ -212,11 +212,16 @@ function Abilities.fire(service, actor, def, payload, now: number)
 		end
 		service.fireArrow(actor, def, target)
 	elseif effect == "volley" then
+		-- Where the player aims (pulled in to the Volley's range), else the enemy in front, else ahead.
 		local point
-		if target and target:isAlive() then
+		local root = actor:root()
+		local aimed = actor.aimPoint
+		if aimed and root then
+			local offset = flat(aimed - root.Position)
+			point = if offset.Magnitude > def.range then root.Position + offset.Unit * def.range else aimed
+		elseif target and target:isAlive() then
 			point = target:position() :: Vector3
 		else
-			local root = actor:root()
 			point = root and root.Position + flat(actor:lookVector()).Unit * math.min(def.range, 25)
 		end
 		if point then
