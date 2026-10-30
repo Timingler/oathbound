@@ -4,7 +4,7 @@ An animation only plays in a game owned by the account (or group) that uploaded 
 
 ## Where they came from
 
-All four are free Creator Store kits. The animations were re-uploaded from the KeyframeSequences each kit ships in its `AnimSaves` folders. Nothing was taken from other people's games.
+The movement, wall run, climb and bow animations come from four free Creator Store kits. The combat animations come from the **vania** place, which Charles says was released for reuse. All of them were re-uploaded from the KeyframeSequences the files ship in their `AnimSaves` folders. Quirkbound was not used: its scripts show it was copied from the live game with an exploit.
 
 | Kit | Rig | Animations | Used in the prototype |
 |---|---|---|---|
@@ -12,6 +12,18 @@ All four are free Creator Store kits. The animations were re-uploaded from the K
 | R6 Wall Run (@skaterstudios) | R6 | Wall run and wall jump, left and right | Not yet |
 | Advanced R15 Wall Climb System | R15 | Climb in 4 directions, climb idle, ledge hold/shimmy, vault | Not yet |
 | Bow & Arrow System | R6 | Bow idle, run, aim, aim hold, aimed shot, shoot, plus 5 sounds | Not yet (for the Ranger) |
+| vania | R6 | Sword, dagger and hammer combos, block, parry, roll and skills (24, listed below) | Yes, `server/Animations.luau` and the dodge in `client/Input.luau` |
+
+### Combat animations (vania)
+
+| Class | Basic attack (4-hit combo) | Abilities | Block |
+|---|---|---|---|
+| Warden | One-hand sword M1 to M4 | Shield Bash: Hilt Pommel. Cleave: sword skill 2. Intercept: Striking Advance | Sword block |
+| Assassin | Dagger 1 to 4 | Finisher: dagger skill 4. Backstab: assassination. Poison Blade: dagger skill 1 | Dagger block |
+| Cleric | Hammer 1 to 4 | Sanctuary: slam the ground. Mend has no animation yet | Sword block |
+| Everyone | | Parry: parry 1 and 2, alternating. Dodge: roll | |
+
+The server plays each one when the action goes on the timeline, stretched over its wind-up plus recovery. The boss and dummy are built from parts, so they are not animated.
 
 **Credit:** the Run System's licence asks for "Run and Walk System by @skaterstudios" in the game description. Add it before publishing.
 

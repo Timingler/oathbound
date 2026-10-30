@@ -20,11 +20,13 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Net = require(Shared.Net)
 local Kits = require(Shared.Kits)
 local Constants = require(Shared.Constants)
+local AssetIds = require(Shared.AssetIds)
 
 local R = Net.Request
 local HEAVY_HOLD = 0.25 -- seconds of holding left click before it counts as a heavy attack [Proto]
 local DODGE_SPEED = 55 -- studs per second [Proto]
 local DODGE_TIME = 0.3 -- seconds [Proto]
+local ROLL_ANIM_RATE = 2 -- the roll animation is 1.17 s; this plays it in about 0.6 s [Proto]
 
 local Input = {}
 
@@ -54,6 +56,8 @@ end
 
 -- Plays the roll locally right away so it feels instant. The server owns the invulnerability window.
 local lastRoll = 0
+local rollTrack: AnimationTrack? = nil
+local rollAnimator: Animator? = nil
 function Input.playDodge()
 	local root, humanoid = rootAndHumanoid()
 	if not root or not humanoid or humanoid.Health <= 0 then
@@ -65,6 +69,20 @@ function Input.playDodge()
 		dir = root.CFrame.LookVector
 	end
 	dir = Vector3.new(dir.X, 0, dir.Z).Unit
+
+	-- Played here rather than by the server so the roll starts on the key press. It replicates from the owner.
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if animator and humanoid.RigType == Enum.HumanoidRigType.R6 then
+		if not rollTrack or rollAnimator ~= animator then
+			local animation = Instance.new("Animation")
+			animation.AnimationId = AssetIds.uri(AssetIds.Combat.Common.roll.id)
+			rollTrack = animator:LoadAnimation(animation)
+			rollTrack.Priority = Enum.AnimationPriority.Action3
+			rollAnimator = animator
+		end
+		rollTrack:Play(0.05)
+		rollTrack:AdjustSpeed(ROLL_ANIM_RATE)
+	end
 
 	local attachment = Instance.new("Attachment")
 	attachment.Parent = root

@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Formulas = require(Shared.Formulas)
+local Animations = require(script.Parent.Animations)
 
 local Abilities = {}
 
@@ -87,6 +88,7 @@ function Abilities.tryStart(service, actor, def, now: number): (boolean, string?
 	end
 
 	actor.timeline:start(def, now, actor.stats.actionSpeed, { target = target })
+	Animations.action(actor, def, now)
 	return true
 end
 

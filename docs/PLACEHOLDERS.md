@@ -57,3 +57,5 @@ These are in the design but have no defined values yet, so they are not built. I
 | Value | Where | Why it was needed |
 |---|---|---|
 | Run animation from 20 studs/s, 0.2 s fades | `client/Locomotion.luau` | The prototype has no sprint yet, so at the default 16 studs/s the walk cycle plays. |
+| Combat animations stretched over wind-up + recovery, rate 0.5x to 3x; combo resets after 1.5 s | `server/Animations.luau` | The source animations have their own lengths; this keeps them in step with the timeline. |
+| Roll animation at 2x speed | `client/Input.luau` | The roll is 1.17 s long and the dodge lasts 0.3 s. |

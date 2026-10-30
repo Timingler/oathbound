@@ -15,6 +15,7 @@ local Scaling = require(Shared.Scaling)
 
 local Actor = require(script.Parent.Actor)
 local Abilities = require(script.Parent.Abilities)
+local Animations = require(script.Parent.Animations)
 
 local CombatService = {}
 
@@ -305,6 +306,7 @@ function CombatService.enemyHit(enemy, target, written: number, attack)
 		if now - target.blockStart <= Constants.PARRY_WINDOW then
 			CombatService.fx({ t = "avoid", dst = target.id, text = "Parry!", pos = tp })
 			CombatService.log(target, "Parried " .. attack.name)
+			Animations.parry(target)
 			if enemy.onParried then
 				enemy:onParried(target)
 			end
@@ -419,6 +421,7 @@ local function handleRequest(actor, req)
 		end
 		actor.timeline:cancel()
 		actor.blocking = false
+		Animations.cancel(actor)
 		actor.lastDodge = now
 		actor.dodgeUntil = now + Constants.DODGE_INVULN
 	elseif kind == R.BLOCK_START then
@@ -428,8 +431,10 @@ local function handleRequest(actor, req)
 		actor.timeline:cancel()
 		actor.blocking = true
 		actor.blockStart = now
+		Animations.block(actor, true)
 	elseif kind == R.BLOCK_END then
 		actor.blocking = false
+		Animations.block(actor, false)
 	elseif kind == R.BASIC then
 		local ok, why = Abilities.tryStart(CombatService, actor, kit.basic, now)
 		if not ok and why ~= "busy" then
@@ -498,6 +503,7 @@ local function tick()
 			actor.dead = true
 			actor.timeline:cancel()
 			actor.blocking = false
+			Animations.cancel(actor)
 			local humanoid = actor:humanoid()
 			if humanoid then
 				humanoid.Health = 0
