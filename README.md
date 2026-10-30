@@ -10,7 +10,7 @@ The first slice tests whether the combat feels good:
   - **Assassin** (damage): basic attacks build combo points and apply Mark. Backstab, Poison Blade and Smoke Step. Hold left click at 5 points for the Finisher.
   - **Cleric** (healer): basic attacks heal the most hurt ally. Mend and Sanctuary.
   - **Warden** (tank): blocking builds Grit and Bulwark. Shield Bash interrupts, Cleave hits a cone, and Intercept (T) dashes to an ally and takes their next hit.
-  - **Ranger** (ranged damage, key 4): real arrows that fly where you aim and drop a little. Quick Shot (tap), Aimed Shot (hold), Piercing Arrow, Volley (arrows rain on a circle) and Disengage (leap back). The base class for Marksman, Beastmaster and Druid later. Bow, animations and sounds from the Bow & Arrow System kit.
+  - **Ranger** (ranged damage, key 4): a skill class with real arrows and no auto-aim: hold right click to aim (zoom, draw), left click to loose. The longer the draw, the harder and faster the arrow; arrows drop slightly and take time to arrive. Quick Shot (left click without aiming), Aimed Shot (left click while aiming), Piercing Arrow, Volley (arrows rain on a circle) and Disengage (leap back). The base class for Marksman, Beastmaster and Druid later. Bow, animations and sounds from the Bow & Arrow System kit.
 - **One-action timeline** on the server: wind-up, fire, recovery, in 50 ms ticks. Dodging cancels a wind-up and costs nothing.
 - **Block, parry and dodge.** Attack colours tell you what works: white (anything), orange (dodge or parry), red (dodge or move).
 - **The Ashen Sentinel**, a test boss with a white swing, an orange tank-buster, a red sweep and an interruptible cast. It also has a Break meter: parries and interrupts fill it, and a full meter stuns the boss for 3 seconds.
@@ -46,7 +46,7 @@ The boss is tuned for a group, so it will flatten one player. While playing, sel
 | Input | Action |
 |---|---|
 | Left click (tap / hold) | Basic attack / heavy attack |
-| Right click (hold) | Block. The first 200 ms is a parry |
+| Right click (hold) | Block. The first 200 ms is a parry. Ranger: aim |
 | Space | Dodge roll (about 250 ms invulnerable) |
 | Q, E, R | Skills |
 | T | Signature key (Warden's Intercept) |

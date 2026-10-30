@@ -1,6 +1,7 @@
 -- Ranger (ranged physical damage): the base class that later branches into Marksman, Beastmaster and Druid.
--- Arrows are real projectiles (server/Projectiles): they fly where you aim, drop slightly, and stop at the first
--- enemy unless they pierce. Tests Action Speed and crit at range, where the melee classes cannot reach.
+-- A skill class: hold right click to aim (the bow draws), left click to loose. Arrows are real projectiles
+-- (server/Projectiles) that fly exactly where you point, with travel time and a slight drop, and no auto-aim.
+-- The longer the draw, the harder and faster the arrow. Left click without aiming is a weaker hip-fire shot.
 -- Every number here is [Proto]: the Ranger is not in the placeholder kit table yet.
 
 return {
@@ -10,29 +11,33 @@ return {
 	isTank = false,
 	resource = { name = "Focus", pool = 100, regen = 12, start = 100 },
 
-	-- Quick Shot: a snap draw and release.
+	-- Quick Shot: hip fire, left click without aiming.
 	basic = {
 		id = "basic",
 		name = "Quick Shot",
 		effect = "shot",
-		coeff = 0.7,
-		windup = 0.35,
+		coeff = 0.6,
+		windup = 0.22,
 		recovery = 0.30,
-		range = 60, -- arrows fall out of the sky past this [Proto]
-		speed = 140, -- studs per second
+		range = 110, -- arrows are removed past 1.3x this [Proto]
+		speed = 190, -- studs per second
 		gain = 4, -- +4 Focus per shot
 	},
-	-- Hold left click: Aimed Shot, a full draw that hits much harder and flies faster.
+	-- Aimed Shot: left click while aiming. The draw is the time right click has been held, so the release itself
+	-- is quick. Damage and speed grow from `minCoeff`/`minSpeed` at no draw to `coeff`/`speed` at `fullDraw`.
 	heavy = {
 		id = "aimed",
 		name = "Aimed Shot",
 		effect = "shot",
-		coeff = 2.2,
-		windup = 0.90,
-		recovery = 0.40,
-		range = 90,
-		speed = 220,
-		cost = 15,
+		needsAim = true,
+		coeff = 2.4,
+		minCoeff = 0.8,
+		speed = 330,
+		minSpeed = 210,
+		fullDraw = 1.0, -- seconds of aiming for a full draw
+		windup = 0.10,
+		recovery = 0.35,
+		range = 220,
 	},
 	skills = {
 		{
@@ -46,8 +51,8 @@ return {
 			cooldown = 8,
 			hasteTag = 1.0,
 			cost = 25,
-			range = 80,
-			speed = 200,
+			range = 180,
+			speed = 300,
 		},
 		{
 			id = "volley",

@@ -88,7 +88,17 @@ function Abilities.tryStart(service, actor, def, now: number): (boolean, string?
 		return false, "target not Marked"
 	end
 
-	actor.timeline:start(def, now, actor.stats.actionSpeed, { target = target })
+	local draw = nil
+	if def.needsAim then
+		-- The Ranger's Aimed Shot: needs right click held; its draw is how long it has been held.
+		if not actor.aimSince then
+			return false, "aim first (hold right click)"
+		end
+		draw = math.clamp((now - actor.aimSince) / (def.fullDraw or 1), 0, 1)
+		actor.aimSince = now -- the next arrow draws from scratch
+	end
+
+	actor.timeline:start(def, now, actor.stats.actionSpeed, { target = target, draw = draw })
 	Animations.action(actor, def, now)
 	service.fx({
 		t = "swing",
@@ -210,7 +220,7 @@ function Abilities.fire(service, actor, def, payload, now: number)
 		if def.gain then
 			actor:gainResource(def.gain)
 		end
-		service.fireArrow(actor, def, target)
+		service.fireArrow(actor, def, target, payload and payload.draw)
 	elseif effect == "volley" then
 		-- Where the player aims (pulled in to the Volley's range), else the enemy in front, else ahead.
 		local point

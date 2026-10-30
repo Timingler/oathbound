@@ -9,6 +9,10 @@ Constants.TICK = 0.05 -- seconds per server tick [A]
 Constants.ACTION_SPEED_CAP = 0.30 -- hard total, buffs included
 Constants.ACTION_SPEED_STEP = 0.05 -- quantized for server validation (GDD section 13)
 
+-- Arrows (server/Projectiles simulates them; client/Effects draws them on the same arc)
+Constants.ARROW_GRAVITY = 30 -- studs per second squared: a slight drop that only matters at long range [Proto]
+Constants.ARROW_MUZZLE = CFrame.new(-0.5, 1, -2) -- from the root: the bow, held in the left hand [Proto]
+
 -- Defense
 Constants.PARRY_WINDOW = 0.20 -- seconds after block starts; never changed by stats
 Constants.DODGE_INVULN = 0.25 -- seconds; never changed by stats

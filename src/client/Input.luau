@@ -1,6 +1,7 @@
 -- PC controls from GDD v2 section 4 ("7 keys, 9 actions"), plus prototype keys.
 --   Left click tap / hold   basic attack / heavy attack
---   Right click hold        block (the first 200 ms is a parry)
+--   Right click hold        block (the first 200 ms is a parry); the Ranger aims instead
+--   Left click while aiming the Ranger's Aimed Shot (the longer you aimed, the stronger)
 --   Space                   dodge roll
 --   Q, E, R                 skills
 --   T                       signature key (Warden Intercept)
@@ -41,6 +42,25 @@ local LOCK_KEYS = { [Enum.KeyCode.LeftShift] = true, [Enum.KeyCode.LeftControl] 
 local LOCK_OFFSET = Vector3.new(1.75, 0, 0) -- over-the-shoulder offset while locked
 local cameraOffset = Vector3.zero
 local crosshair: Frame? = nil
+
+-- Ranger aiming [Proto]: right click held zooms over the shoulder and draws the bow.
+local AIM_OFFSET = Vector3.new(2.2, 0.3, 0)
+local AIM_FOV = 48
+local AIM_WALK_SPEED = 9
+local AIM_REFIRE = 0.45 -- seconds between Aimed Shots (its wind-up plus recovery)
+local KICK = 1.2 -- degrees the camera kicks up on release
+local aiming = false
+local aimStart = 0
+local lastAimedShot = 0
+local kick = 0
+local defaultFov: number? = nil
+local savedWalkSpeed: number? = nil
+local aimTracks: { AnimationTrack } = {}
+local bowRing: Frame? = nil
+
+local function isRanger(): boolean
+	return player:GetAttribute("Class") == "Ranger"
+end
 local lmbDownAt: number? = nil
 local heavySent = false
 
@@ -53,7 +73,7 @@ local function aimPoint(): Vector3?
 		return nil
 	end
 	local ray
-	if mouseFree then
+	if mouseFree and not aiming then
 		local m = UserInputService:GetMouseLocation()
 		ray = camera:ViewportPointToRay(m.X, m.Y)
 	else
@@ -161,6 +181,93 @@ local function bind(name: string, fn: (Enum.UserInputState) -> (), ...)
 	end, false, Enum.ContextActionPriority.High.Value, ...)
 end
 
+local function playAimTracks(humanoid: Humanoid)
+	local animator = humanoid:FindFirstChildOfClass("Animator")
+	if not animator or humanoid.RigType ~= Enum.HumanoidRigType.R6 then
+		return
+	end
+	local function load(id: number, looped: boolean): AnimationTrack
+		local animation = Instance.new("Animation")
+		animation.AnimationId = AssetIds.uri(id)
+		local t = animator:LoadAnimation(animation)
+		t.Priority = Enum.AnimationPriority.Action
+		t.Looped = looped
+		return t
+	end
+	local raise = load(AssetIds.Bow.Aim, false)
+	local hold = load(AssetIds.Bow["Aim Hold"], true)
+	aimTracks = { raise, hold }
+	raise:Play(0.1)
+	-- Settle into the held draw as the raise ends.
+	task.delay(math.max(0.1, raise.Length - 0.1), function()
+		if aiming and aimTracks[2] == hold then
+			hold:Play(0.1)
+		end
+	end)
+end
+
+local function startAim()
+	local _, humanoid = rootAndHumanoid()
+	if aiming or not humanoid or humanoid.Health <= 0 or player:GetAttribute("UiOpen") then
+		return
+	end
+	aiming = true
+	aimStart = os.clock()
+	savedWalkSpeed = humanoid.WalkSpeed
+	humanoid.WalkSpeed = AIM_WALK_SPEED
+	playAimTracks(humanoid)
+	send(R.AIM_START)
+end
+
+local function stopAim()
+	if not aiming then
+		return
+	end
+	aiming = false
+	local _, humanoid = rootAndHumanoid()
+	if humanoid and savedWalkSpeed then
+		humanoid.WalkSpeed = savedWalkSpeed
+	end
+	savedWalkSpeed = nil
+	for _, t in aimTracks do
+		t:Stop(0.15)
+	end
+	aimTracks = {}
+	actionRemote:FireServer({ kind = R.AIM_END }) -- not through send(), so it still goes out with a menu open
+end
+
+-- Left click while aiming: loose the arrow now on this screen; the server fires the same one and judges the hit.
+local function aimedShot()
+	local now = os.clock()
+	if now - lastAimedShot < AIM_REFIRE then
+		return
+	end
+	local root = rootAndHumanoid()
+	local point = aimPoint()
+	if not root or not point then
+		return
+	end
+	lastAimedShot = now
+	local def = Kits.Ranger.heavy
+	local draw = math.clamp((now - aimStart) / (def.fullDraw or 1), 0, 1)
+	aimStart = now -- the next arrow draws from scratch, as on the server
+	send(R.HEAVY)
+	local origin = (root.CFrame * Constants.ARROW_MUZZLE).Position
+	if (point - origin).Magnitude > 3 then
+		local speed = def.minSpeed + (def.speed - def.minSpeed) * draw
+		Input.onPredictArrow(origin, (point - origin).Unit * speed, Constants.ARROW_GRAVITY)
+	end
+	kick = KICK * (0.5 + 0.5 * draw)
+	-- Restart the draw pose.
+	local hold = aimTracks[2]
+	if hold then
+		hold.TimePosition = 0
+	end
+end
+
+-- Set by init.client to client/Effects.predictArrow (Input does not require Effects).
+Input.onPredictArrow = function(_pos: Vector3, _vel: Vector3, _g: number) end
+
 -- The Ranger's Disengage: the server grants it (and the invulnerability), then this client, which owns the
 -- character's physics, makes the leap: back along `dir` and a little up.
 local LEAP_TIME = 0.35 -- seconds [Proto]
@@ -197,6 +304,13 @@ function Input.start()
 	end)
 
 	bind("OathAttack", function(state)
+		if isRanger() and aiming then
+			if state == Enum.UserInputState.Begin then
+				aimedShot()
+			end
+			lmbDownAt = nil
+			return
+		end
 		if state == Enum.UserInputState.Begin then
 			lmbDownAt = os.clock()
 			heavySent = false
@@ -210,6 +324,15 @@ function Input.start()
 
 	-- Passed on as well as handled: with the camera free, right-drag still turns the camera while you block.
 	ContextActionService:BindActionAtPriority("OathBlock", function(_, state)
+		if isRanger() then
+			-- The Ranger aims with right click instead of blocking.
+			if state == Enum.UserInputState.Begin then
+				startAim()
+			elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
+				stopAim()
+			end
+			return Enum.ContextActionResult.Sink
+		end
 		if state == Enum.UserInputState.Begin then
 			send(R.BLOCK_START)
 		elseif state == Enum.UserInputState.End or state == Enum.UserInputState.Cancel then
@@ -221,6 +344,7 @@ function Input.start()
 	-- Space is jump by default; sinking it here turns it into dodge.
 	bind("OathDodge", function(state)
 		if state == Enum.UserInputState.Begin and os.clock() - lastRoll >= Constants.DODGE_COOLDOWN then
+			stopAim()
 			Input.playDodge()
 			send(R.DODGE)
 		end
@@ -283,30 +407,77 @@ function Input.start()
 	dot.Parent = crossGui
 	crosshair = dot
 
+	-- The Ranger's draw: a ring that tightens onto the dot as the bow draws, gold at full draw.
+	local bow = Instance.new("Frame")
+	bow.AnchorPoint = Vector2.new(0.5, 0.5)
+	bow.Position = UDim2.fromScale(0.5, 0.5)
+	bow.Size = UDim2.fromOffset(44, 44)
+	bow.BackgroundTransparency = 1
+	bow.Visible = false
+	Instance.new("UICorner", bow).CornerRadius = UDim.new(1, 0)
+	local bowStroke = Instance.new("UIStroke")
+	bowStroke.Name = "Stroke"
+	bowStroke.Color = Color3.fromRGB(240, 232, 214)
+	bowStroke.Thickness = 1.5
+	bowStroke.Transparency = 0.2
+	bowStroke.Parent = bow
+	bow.Parent = crossGui
+	bowRing = bow
+
 	-- Runs right after the default camera so our mouse lock is not overwritten.
 	RunService:BindToRenderStep("OathCamera", Enum.RenderPriority.Camera.Value + 1, function()
 		-- Hold left click long enough and it becomes a heavy attack, sent once.
-		if lmbDownAt and not heavySent and os.clock() - lmbDownAt >= HEAVY_HOLD then
+		if lmbDownAt and not heavySent and not isRanger() and os.clock() - lmbDownAt >= HEAVY_HOLD then
 			heavySent = true
 			send(R.HEAVY)
 		end
 
 		-- Camera lock (toggle). A menu that has the mouse (the inventory) overrides it.
 		local uiOpen = player:GetAttribute("UiOpen")
-		local locked = not mouseFree and not uiOpen
+		if aiming and (uiOpen or not isRanger()) then
+			stopAim()
+		end
+		local locked = (not mouseFree or aiming) and not uiOpen
 		UserInputService.MouseBehavior = locked and Enum.MouseBehavior.LockCenter or Enum.MouseBehavior.Default
 		UserInputService.MouseIconEnabled = not locked
 		if crosshair then
 			crosshair.Visible = locked
 		end
+		if bowRing then
+			bowRing.Visible = aiming
+			if aiming then
+				local draw = math.clamp((os.clock() - aimStart) / (Kits.Ranger.heavy.fullDraw or 1), 0, 1)
+				local size = 44 - 30 * draw
+				bowRing.Size = UDim2.fromOffset(size, size)
+				local stroke = bowRing:FindFirstChild("Stroke") :: UIStroke
+				stroke.Color = if draw >= 1 then Color3.fromRGB(240, 196, 90) else Color3.fromRGB(240, 232, 214)
+				stroke.Thickness = if draw >= 1 then 2.5 else 1.5
+			end
+		end
 		local root, humanoid = rootAndHumanoid()
 		local camera = workspace.CurrentCamera
+		if humanoid and humanoid.Health <= 0 then
+			stopAim()
+		end
+		if camera then
+			-- Zoom in while aiming; ease back out after.
+			defaultFov = defaultFov or camera.FieldOfView
+			local fov = if aiming then AIM_FOV else defaultFov :: number
+			if math.abs(camera.FieldOfView - fov) > 0.05 then
+				camera.FieldOfView += (fov - camera.FieldOfView) * 0.25
+			end
+			-- Release kick: the camera module rebuilds its CFrame every frame, so this does not build up.
+			if kick > 0.01 and not uiOpen then
+				camera.CFrame *= CFrame.Angles(math.rad(kick), 0, 0)
+				kick *= 0.7
+			end
+		end
 		if not uiOpen and root and humanoid and camera and humanoid.Health > 0 then
-			humanoid.AutoRotate = mouseFree
+			humanoid.AutoRotate = not locked
 			-- Ease the shoulder offset in and out instead of snapping.
-			cameraOffset = cameraOffset:Lerp(locked and LOCK_OFFSET or Vector3.zero, 0.25)
+			cameraOffset = cameraOffset:Lerp(if aiming then AIM_OFFSET elseif locked then LOCK_OFFSET else Vector3.zero, 0.25)
 			humanoid.CameraOffset = cameraOffset
-			if not mouseFree then
+			if locked then
 				local look = camera.CFrame.LookVector
 				local flatLook = Vector3.new(look.X, 0, look.Z)
 				if flatLook.Magnitude > 0.01 then

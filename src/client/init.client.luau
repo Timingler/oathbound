@@ -1,6 +1,7 @@
 -- Oathbound prototype client: input, HUD, movement animations and combat effects. The server decides every outcome.
 
 local ContentProvider = game:GetService("ContentProvider")
+local StarterGui = game:GetService("StarterGui")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
@@ -13,7 +14,13 @@ local Locomotion = require(script.Locomotion)
 local Effects = require(script.Effects)
 local Inventory = require(script.Inventory)
 
+-- No Roblox player list: Tab opens the inventory instead.
+pcall(function()
+	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.PlayerList, false)
+end)
+
 Hud.start()
+Input.onPredictArrow = Effects.predictArrow
 Input.start()
 Locomotion.start()
 task.spawn(Inventory.start) -- waits for its remote

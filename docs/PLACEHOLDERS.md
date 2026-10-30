@@ -28,8 +28,9 @@ None of these have been playtested.
 | Cleave cone 120 degrees, range 12 | `Kits/Warden.luau` | The kit says "frontal" only. |
 | Intercept range 40 studs, targets the lowest-HP ally, guard waits 4 s | `Kits/Warden.luau` | The kit says "dash to an ally and take the next hit" only. |
 | Everyone can block and parry, with the Warden's Stamina numbers | `Constants` | The GDD controls give block and parry to every class, but only the Warden kit lists Stamina. |
-| The whole Ranger kit: Focus 100, +12/s, +4 per Quick Shot; Quick Shot 0.7 coeff, 0.35 s wind-up, 140 studs/s; Aimed Shot 2.2, 0.9 s, 220 studs/s, 15 Focus; Piercing Arrow 1.6, 8 s, 25 Focus; Volley 1.1 in a 10-stud circle, lands 0.6 s after release, 14 s, 35 Focus; Disengage 22 studs back, 0.3 s untouchable, 12 s | `Kits/Ranger.luau` | The Ranger (base class for Marksman, Beastmaster and Druid) is not in the placeholder kit table yet. |
-| Arrow drop 30 studs/s², reach 1.3x range, hit radius +1 stud | `server/Projectiles.luau` | Feel values; arrows lead their target for the drop. |
+| The whole Ranger kit: Focus 100, +12/s, +4 per Quick Shot; Quick Shot 0.6 coeff, 0.22 s wind-up, 190 studs/s; Aimed Shot 0.8 to 2.4 coeff and 210 to 330 studs/s over a 1 s draw, 0.1 s release, no cost; Piercing Arrow 1.6, 8 s, 25 Focus, 300 studs/s; Volley 1.1 in a 10-stud circle, lands 0.6 s after release, 14 s, 35 Focus; Disengage 22 studs back, 0.3 s untouchable, 12 s | `Kits/Ranger.luau` | The Ranger (base class for Marksman, Beastmaster and Druid) is not in the placeholder kit table yet. |
+| Arrow drop 30 studs/s², reach 1.3x range, hit radius +1 stud; no homing or leading | `Constants.luau`, `server/Projectiles.luau` | Feel values. Arrows go exactly where you point and stop at walls. |
+| Aiming: FOV 48, shoulder offset 2.2, walk speed 9, 0.45 s between Aimed Shots, 1.2° camera kick | `client/Input.luau` | Feel values for the Ranger's aim. |
 
 ## Animation feel
 

@@ -83,11 +83,11 @@ local function placeArrow(model: Model, pos: Vector3, vel: Vector3)
 end
 
 -- Starts drawing an arrow from `pos` with `vel`, falling at `g`.
-local function launch(id: number, pos: Vector3, vel: Vector3, g: number, pierce: boolean)
+local function launch(id: any, pos: Vector3, vel: Vector3, g: number, pierce: boolean, predicted: boolean?)
 	local model = makeArrow(pierce)
 	placeArrow(model, pos, vel)
 	model.Parent = workspace
-	arrows[id] = { model = model, pos = pos, vel = vel, g = g, born = os.clock() }
+	arrows[id] = { model = model, pos = pos, vel = vel, g = g, born = os.clock(), predicted = predicted }
 end
 
 local function land(id: number, pos: Vector3?)
@@ -100,13 +100,36 @@ local function land(id: number, pos: Vector3?)
 		placeArrow(a.model, pos, a.vel)
 	end
 	-- Leave it stuck where it landed for a moment.
-	Debris:AddItem(a.model, 0.6)
+	Debris:AddItem(a.model, 2)
+end
+
+local localPlayer = game:GetService("Players").LocalPlayer
+local predictedIds = 0
+
+-- Your own Aimed Shot, drawn the moment you click instead of after the round trip to the server. The server
+-- simulates the same arc and decides what it hits; this copy only has to stop where it meets something.
+function Effects.predictArrow(pos: Vector3, vel: Vector3, g: number)
+	predictedIds += 1
+	launch("p" .. predictedIds, pos, vel, g, false, true)
+	Effects.sfx("bowRelease", pos)
 end
 
 RunService.RenderStepped:Connect(function(dt)
 	for id, a in arrows do
+		local from = a.pos
 		a.pos += a.vel * dt + Vector3.new(0, -0.5 * a.g * dt * dt, 0)
 		a.vel += Vector3.new(0, -a.g * dt, 0)
+		if a.predicted then
+			local params = RaycastParams.new()
+			params.FilterType = Enum.RaycastFilterType.Exclude
+			params.FilterDescendantsInstances = { localPlayer.Character :: Instance, a.model }
+			params.RespectCanCollide = false
+			local hit = workspace:Raycast(from, a.pos - from, params)
+			if hit and (hit.Instance.CanCollide or hit.Instance:FindFirstAncestorOfClass("Model")) then
+				land(id, hit.Position)
+				continue
+			end
+		end
 		placeArrow(a.model, a.pos, a.vel)
 		if os.clock() - a.born > ARROW_LIFETIME then
 			land(id, nil)
@@ -445,6 +468,9 @@ function Effects.onFx(event)
 	elseif t == "cast" then
 		Effects.sfx("bossCast", pos)
 	elseif t == "arrow" then
+		if event.predicted and event.owner == localPlayer.UserId then
+			return -- already drawn by Effects.predictArrow when you clicked
+		end
 		launch(event.id, event.pos, event.vel, event.g, event.pierce)
 		Effects.sfx("bowRelease", pos)
 	elseif t == "arrowEnd" then

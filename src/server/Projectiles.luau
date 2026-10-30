@@ -3,8 +3,8 @@
 -- An arrow is simulated here, not as a part: each tick it moves along a ballistic arc and checks the segment it
 -- covered against every enemy, so fast arrows cannot pass through anyone between ticks. Clients draw it from the
 -- "arrow" Fx event with the same arc (client/Effects), and remove it on "arrowEnd".
--- The Ranger aims where the player points (the crosshair, or the mouse with the camera free), homing onto an enemy
--- only when it is within a few degrees of that, and leading for the drop.
+-- Arrows fly exactly where the player points (the crosshair, or the mouse with the camera free): no homing and no
+-- leading, so the drop and the travel time are the player's to judge. The Ranger is a skill class.
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -13,11 +13,10 @@ local Constants = require(Shared.Constants)
 
 local Projectiles = {}
 
-Projectiles.GRAVITY = 30 -- studs per second squared, a gentle drop [Proto]
-local MUZZLE = CFrame.new(-0.5, 1, -2) -- from the root: the bow, held in the left hand [Proto]
+Projectiles.GRAVITY = Constants.ARROW_GRAVITY
+local MUZZLE = Constants.ARROW_MUZZLE
 local HIT_PADDING = 1.0 -- studs added to an enemy's radius, roughly a character's half-width [Proto]
 local DEFAULT_RADIUS = 1.5
-local SOFT_LOCK = 12 -- degrees between your aim and an enemy for the arrow to home onto it [Proto]
 
 local arrows = {}
 local delayed = {}
@@ -35,38 +34,41 @@ local function segmentDistance(p: Vector3, a: Vector3, b: Vector3): number
 	return (p - (a + ab * t)).Magnitude
 end
 
--- Fires `def` (a "shot": coeff, speed, range, pierce?) from `actor`, at `target` if given.
-function Projectiles.fireArrow(service, actor, def, target)
+-- Speed and damage coefficient of `def` at `draw` (0..1). Shots without a draw use their full values.
+function Projectiles.drawn(def, draw: number?): (number, number)
+	if draw == nil or not def.minSpeed then
+		return def.speed, def.coeff
+	end
+	local t = math.clamp(draw, 0, 1)
+	return def.minSpeed + (def.speed - def.minSpeed) * t, (def.minCoeff or def.coeff) + (def.coeff - (def.minCoeff or def.coeff)) * t
+end
+
+-- Fires `def` (a "shot": coeff, speed, range, pierce?) from `actor`. Players' arrows go to their aim point; an
+-- NPC's (no aim point) go at `target`, or straight ahead.
+function Projectiles.fireArrow(service, actor, def, target, draw: number?)
 	local root = actor:root()
 	if not root then
 		return
 	end
+	local speed, coeff = Projectiles.drawn(def, draw)
 	local origin = (root.CFrame * MUZZLE).Position
 	local aimPoint
 	local aimed = actor.aimPoint -- under the player's crosshair or mouse (CombatService)
-	local onTarget = target and target:isAlive()
 	if aimed and (aimed - origin).Magnitude > 3 then
-		-- Soft lock only when the target is close to where you aim; otherwise the arrow goes where you point.
-		if onTarget then
-			local toTarget = (target:position() :: Vector3) - origin
-			onTarget = (aimed - origin).Unit:Dot(toTarget.Unit) >= math.cos(math.rad(SOFT_LOCK))
-		end
-		aimPoint = if onTarget then target:position() :: Vector3 else aimed
-	elseif onTarget then
+		aimPoint = aimed
+	elseif actor.kind ~= "player" and target and target:isAlive() then
 		aimPoint = target:position() :: Vector3
 	else
 		aimPoint = origin + flat(actor:lookVector()).Unit * def.range
 	end
-	-- Lead for the drop: aim above the point by the distance the arrow falls on the way (within its range).
-	local flight = math.min((aimPoint - origin).Magnitude, def.range) / def.speed
-	aimPoint += Vector3.new(0, 0.5 * Projectiles.GRAVITY * flight * flight, 0)
-	local velocity = (aimPoint - origin).Unit * def.speed
+	local velocity = (aimPoint - origin).Unit * speed
 
 	nextId += 1
 	local arrow = {
 		id = nextId,
 		actor = actor,
 		def = def,
+		coeff = coeff,
 		pos = origin,
 		vel = velocity,
 		traveled = 0,
@@ -82,6 +84,9 @@ function Projectiles.fireArrow(service, actor, def, target)
 		vel = velocity,
 		g = Projectiles.GRAVITY,
 		pierce = def.pierce == true,
+		-- The shooter's client already drew this arrow when the click happened (client/Effects predicts it).
+		owner = actor.player and actor.player.UserId or nil,
+		predicted = def.needsAim == true,
 	})
 end
 
@@ -109,6 +114,22 @@ function Projectiles.step(service, now: number)
 		local actor = arrow.actor
 		local stopped = false
 		local hitAny = false
+		-- Walls and the ground stop an arrow: shorten this tick's segment to where it strikes them.
+		local params = RaycastParams.new()
+		params.FilterType = Enum.RaycastFilterType.Exclude
+		local skip = {}
+		for _, other in service.living() do
+			if other.model then
+				table.insert(skip, other.model)
+			end
+		end
+		params.FilterDescendantsInstances = skip
+		params.RespectCanCollide = true
+		local wall = workspace:Raycast(from, to - from, params)
+		if wall then
+			to = wall.Position
+			arrow.pos = to
+		end
 		-- The nearest enemy along this tick's segment is hit first.
 		local candidates = {}
 		for _, other in service.living() do
@@ -126,14 +147,14 @@ function Projectiles.step(service, now: number)
 			local enemy = c[1]
 			arrow.hit[enemy] = true
 			hitAny = true
-			service.strike(actor, enemy, arrow.def.coeff * actor.wd, arrow.def)
+			service.strike(actor, enemy, arrow.coeff * actor.wd, arrow.def)
 			if not arrow.def.pierce then
 				arrow.pos = enemy:position() :: Vector3
 				stopped = true
 				break
 			end
 		end
-		if not stopped and (to.Y < 0 or arrow.traveled >= arrow.maxRange) then
+		if not stopped and (wall or to.Y < -50 or arrow.traveled >= arrow.maxRange) then
 			stopped = true
 		end
 		if stopped then

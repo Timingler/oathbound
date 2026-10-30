@@ -291,8 +291,8 @@ function CombatService.heal(source, target, amount: number, def)
 	)
 end
 
-function CombatService.fireArrow(actor, def, target)
-	Projectiles.fireArrow(CombatService, actor, def, target)
+function CombatService.fireArrow(actor, def, target, draw: number?)
+	Projectiles.fireArrow(CombatService, actor, def, target, draw)
 end
 
 -- A Volley: lands on the circle around `point` after the arrows fall.
@@ -436,6 +436,7 @@ local function spawnActor(player: Player, character: Model)
 
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 	task.spawn(Weapons.equip, character, className)
+	player:SetAttribute("Class", className) -- client/Input switches the right click to aiming for the Ranger
 	humanoid.MaxHealth = actor.maxHealth
 	humanoid.Health = actor.maxHealth
 	humanoid.Died:Connect(function()
@@ -456,6 +457,8 @@ function CombatService.setClass(actor, className: string)
 	end
 	CombatService.classOf[actor.player] = className
 	actor:applyKit(kit)
+	actor.aimSince = nil
+	actor.player:SetAttribute("Class", className)
 	if actor.model then
 		task.spawn(Weapons.equip, actor.model, className)
 	end
@@ -488,6 +491,16 @@ local function handleRequest(actor, req)
 		actor.aimPoint = aim
 	else
 		actor.aimPoint = nil
+	end
+
+	if kind == R.AIM_START then
+		if kit and kit.heavy and kit.heavy.needsAim then
+			actor.aimSince = now
+		end
+		return
+	elseif kind == R.AIM_END then
+		actor.aimSince = nil
+		return
 	end
 
 	if kind == R.DODGE then
@@ -727,7 +740,7 @@ function CombatService.start()
 		requestBudget[player] = budget + 1
 		local queue = queues[player]
 		if queue then
-			table.insert(queue, { kind = req.kind, slot = req.slot, class = req.class })
+			table.insert(queue, { kind = req.kind, slot = req.slot, class = req.class, aim = req.aim })
 		end
 	end)
 

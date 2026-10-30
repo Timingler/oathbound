@@ -18,6 +18,8 @@ return {
 		BLOCK_END = "blockEnd",
 		DODGE = "dodge",
 		CLASS = "class", -- with class name, out of combat only
+		AIM_START = "aimStart", -- Ranger: right click held, the bow starts drawing
+		AIM_END = "aimEnd",
 	},
 
 	SNAPSHOT_RATE = 0.1,
