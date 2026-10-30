@@ -17,6 +17,7 @@ local Actor = require(script.Parent.Actor)
 local Abilities = require(script.Parent.Abilities)
 local Animations = require(script.Parent.Animations)
 local Poise = require(script.Parent.Poise)
+local Ragdoll = require(script.Parent.Ragdoll)
 local Weapons = require(script.Parent.Weapons)
 local Projectiles = require(script.Parent.Projectiles)
 
@@ -447,6 +448,7 @@ local function spawnActor(player: Player, character: Model)
 	player:SetAttribute("Class", className) -- client/Input switches the right click to aiming for the Ranger
 	humanoid.MaxHealth = actor.maxHealth
 	humanoid.Health = actor.maxHealth
+	Ragdoll.onDeath(humanoid)
 	humanoid.Died:Connect(function()
 		actor.dead = true
 		actor.health = 0

@@ -4,7 +4,7 @@
 -- combos of white (block, parry or dodge) slashes, now and then a slow orange thrust (parry or dodge only),
 -- blocks some of your attacks from the front, rolls away when you pile on hits, and is staggered when you parry
 -- it or break its poise (server/Poise; its thrust has hyper armor).
--- It dies, falls apart, and a new one walks out of its post after a few seconds.
+-- It dies, goes limp, and a new one walks out of its post after a few seconds.
 --
 -- Passive mode: the training dummy. An R6 straw figure that turns to face the nearest player and never attacks
 -- or defends, so the DPS meter stays honest.
@@ -21,6 +21,7 @@ local Constants = require(Shared.Constants)
 local Actor = require(script.Parent.Actor)
 local Animations = require(script.Parent.Animations)
 local Weapons = require(script.Parent.Weapons)
+local Ragdoll = require(script.Parent.Ragdoll)
 
 local Duelist = {}
 Duelist.__index = Duelist
@@ -157,6 +158,7 @@ function Duelist:spawn()
 	humanoid.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
 	humanoid.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
 	humanoid.WalkSpeed = Duelist.WALK_SPEED
+	Ragdoll.onDeath(humanoid)
 	humanoid.MaxHealth = 100
 	humanoid.Health = 100
 	if not humanoid:FindFirstChildOfClass("Animator") then
@@ -370,7 +372,7 @@ function Duelist:die(now: number)
 	self.state = "dead"
 	self.stateEnds = now + Duelist.RESPAWN
 	actor.dead = true
-	self.humanoid.Health = 0 -- R6 falls apart
+	self.humanoid.Health = 0 -- goes limp (server/Ragdoll)
 	self.fill.Size = UDim2.fromScale(0, 1)
 	for _, p in self.service.living("players") do
 		if self.service.inRange(actor, p, Duelist.LEASH_RANGE) then
