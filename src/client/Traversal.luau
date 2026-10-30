@@ -32,12 +32,12 @@ local MIN_WALL = 7 -- a wall must reach this far above your feet to be climbable
 local MAX_WALL_NORMAL_Y = 0.35 -- steeper than this is a floor or a slope, not a wall
 local SIDE_SPEED = 0.75 -- of the climb speed
 local MANTLE_TIME = 0.35 -- seconds
+local FACE_WALL = math.cos(math.rad(45))
 local LEAP_AWAY = 28 -- studs per second off the wall when you leap
 local LEAP_UP = 38
 
 -- Glide [Proto]
 local GLIDE_TURN = 2.5 -- how quickly the glide turns toward the camera (per second)
-local SAIL_COLOR = Color3.fromRGB(86, 66, 52)
 
 local Traversal = {}
 
@@ -59,7 +59,7 @@ local rig: {
 }? = nil
 
 local climb = { normal = Vector3.zAxis, mantling = false }
-local glide = { dir = Vector3.zAxis, sail = nil :: Model? }
+local glide = { dir = Vector3.zAxis }
 
 local function rayParams(character: Model): RaycastParams
 	local params = RaycastParams.new()
@@ -109,10 +109,6 @@ local function release()
 	rig.humanoid.PlatformStand = false
 	rig.climbTrack:Stop(Constants.ANIM_FADE)
 	rig.glideTrack:Stop(Constants.ANIM_FADE)
-	if glide.sail then
-		glide.sail:Destroy()
-		glide.sail = nil
-	end
 end
 
 local function stop()
@@ -231,38 +227,6 @@ end
 ----------------------------------------------------------------------------------------------------
 -- Glide
 
-local function makeSail(character: Model): Model?
-	local torso = character:FindFirstChild("Torso") :: BasePart?
-	if not torso then
-		return nil
-	end
-	-- The cloak spread from the shoulders like two wings, held out by the arms, sagging toward the back.
-	local sail = Instance.new("Model")
-	sail.Name = "OathSailcloth"
-	for _, side in { -1, 1 } do
-		local panel = Instance.new("Part")
-		panel.Name = "Wing"
-		panel.Material = Enum.Material.Fabric
-		panel.Color = SAIL_COLOR
-		panel.Size = Vector3.new(2.6, 0.05, 3.2)
-		panel.CanCollide = false
-		panel.CanQuery = false
-		panel.CanTouch = false
-		panel.Massless = true
-		local offset = CFrame.new(side * 1.25, 0.95, 1.2)
-			* CFrame.Angles(math.rad(-20), 0, math.rad(side * -14))
-		panel.CFrame = torso.CFrame * offset
-		local weld = Instance.new("Weld")
-		weld.Part0 = torso
-		weld.Part1 = panel
-		weld.C0 = offset
-		weld.Parent = panel
-		panel.Parent = sail
-	end
-	sail.Parent = character
-	return sail
-end
-
 local function startGlide()
 	if not rig then
 		return
@@ -276,7 +240,6 @@ local function startGlide()
 	rig.align.Enabled = true
 	rig.velocity.Enabled = true
 	rig.glideTrack:Play(Constants.ANIM_FADE)
-	glide.sail = makeSail(rig.character)
 end
 
 local function stepGlide(dt: number)
@@ -420,7 +383,9 @@ function Traversal.start()
 			-- Jumping into a tall wall grabs it at once; walking into one grabs it after a moment.
 			local move = r.humanoid.MoveDirection
 			local hit = move.Magnitude > 0.5 and wallAhead(r.root, Vector3.new(move.X, 0, move.Z).Unit, params)
-			if hit and move:Dot(-hit.Normal) > 0.7 and wallTallEnough(r.root, hit.Normal, params) then
+			-- You must face the wall (within about 45 degrees) as well as move into it: no climbing backwards.
+			local facing = hit and r.root.CFrame.LookVector:Dot(-hit.Normal) > FACE_WALL
+			if hit and facing and move:Dot(-hit.Normal) > 0.7 and wallTallEnough(r.root, hit.Normal, params) then
 				pushingSince = pushingSince or os.clock()
 				local airborne = r.humanoid:GetState() == Enum.HumanoidStateType.Jumping
 					or r.humanoid:GetState() == Enum.HumanoidStateType.Freefall

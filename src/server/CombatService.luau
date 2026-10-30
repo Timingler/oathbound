@@ -18,6 +18,7 @@ local Abilities = require(script.Parent.Abilities)
 local Animations = require(script.Parent.Animations)
 local Poise = require(script.Parent.Poise)
 local Ragdoll = require(script.Parent.Ragdoll)
+local Glider = require(script.Parent.Glider)
 local Weapons = require(script.Parent.Weapons)
 local Projectiles = require(script.Parent.Projectiles)
 
@@ -487,11 +488,16 @@ local R = Net.Request
 
 local AIM_REACH = 320 -- studs; the client aims up to 300 away [Proto]
 
--- Climbing and gliding need both hands: the weapon or tool is put out of sight, and comes back after.
+-- Climbing and gliding need both hands: the weapon or tool is put out of sight, and comes back after. Gliding
+-- also shows the kit's glider over the character (server/Glider).
 local STOWED_FOLDERS = { "OathWeapon", "OathTool" }
 local function syncStow(actor)
+	if not actor.model then
+		return
+	end
+	task.spawn(Glider.set, actor.model, actor.exertion == "glide")
 	local stow = actor.exertion == "climb" or actor.exertion == "glide"
-	if (actor.stowed == true) == stow or not actor.model then
+	if (actor.stowed == true) == stow then
 		return
 	end
 	actor.stowed = stow
@@ -558,7 +564,7 @@ local function handleRequest(actor, req)
 	end
 
 	-- A hotbar tool is out (server/Tools): attacks use the tool, and anything else that needs the weapon draws it
-	-- first. Block and dodge work either way.
+	-- first. Dodge works either way; block does nothing (below).
 	if actor.player and actor.player:GetAttribute("HeldTool") then
 		if kind == R.BASIC or kind == R.HEAVY then
 			CombatService.onToolUse(actor)
@@ -593,6 +599,9 @@ local function handleRequest(actor, req)
 	elseif kind == R.BLOCK_START then
 		if actor.timeline.state == "recovery" then
 			return
+		end
+		if actor.player and actor.player:GetAttribute("HeldTool") then
+			return -- tools are not weapons: no block or parry while one is out
 		end
 		actor.timeline:cancel()
 		actor.blocking = true

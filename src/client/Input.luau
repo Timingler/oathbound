@@ -372,6 +372,9 @@ function Input.start()
 
 	-- Passed on as well as handled: with the camera free, right-drag still turns the camera while you block.
 	ContextActionService:BindActionAtPriority("OathBlock", function(_, state)
+		if player:GetAttribute("HeldTool") then
+			return Enum.ContextActionResult.Pass -- a tool is not a weapon: no block (the server agrees)
+		end
 		if isRanger() then
 			-- The Ranger aims with right click instead of blocking.
 			if state == Enum.UserInputState.Begin then
@@ -521,7 +524,10 @@ function Input.start()
 				kick *= 0.7
 			end
 		end
-		if not uiOpen and root and humanoid and camera and humanoid.Health > 0 then
+		-- Climbing and gliding turn the character themselves (client/Traversal), and lock-on turns it to the target
+		-- (client/LockOn); turning it to the camera here as well made you climb with your back to the wall.
+		local turnedElsewhere = player:GetAttribute("Traversal") ~= nil or LockOn.point() ~= nil
+		if not uiOpen and not turnedElsewhere and root and humanoid and camera and humanoid.Health > 0 then
 			humanoid.AutoRotate = not locked
 			-- Ease the shoulder offset in and out instead of snapping.
 			cameraOffset = cameraOffset:Lerp(if aiming then AIM_OFFSET elseif locked then LOCK_OFFSET else Vector3.zero, 0.25)

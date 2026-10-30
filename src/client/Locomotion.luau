@@ -15,7 +15,7 @@ local Constants = require(Shared.Constants)
 
 local FADE = Constants.ANIM_FADE
 local MOVING = 0.5 -- studs per second below which the character counts as standing still
-local RUN_FROM = 20 -- studs per second; the prototype walks at 16 and has no sprint yet [Proto]
+local RUN_FROM = 20 -- studs per second; walking is 16, the sprint (client/Sprint) 24 [Proto]
 -- Speeds the kit's walk and run cycles were authored for, and its playback rate limits.
 -- The walk was authored for about 12 studs/s; at the prototype's 16 that played it 1.33x and looked hurried
 -- (playtest feedback), so it is matched to 14.5: about 1.1x, with a little foot slide. [Proto]
@@ -92,13 +92,20 @@ local function setup(character: Model)
 			switch(if character:GetAttribute("WeaponHold") then nil else "Idle", 1)
 			return
 		end
-		-- In object space, forward is -Z and right is +X.
-		local localDir = root.CFrame:VectorToObjectSpace(flat)
-		local dir
-		if math.abs(localDir.Z) >= math.abs(localDir.X) then
-			dir = if localDir.Z < 0 then "W" else "S"
-		else
-			dir = if localDir.X > 0 then "D" else "A"
+		-- With the camera free the character turns to face where it goes, so it always plays the forward cycle; the
+		-- sideways and backward cycles were showing while it turned, slid along walls or came out of a dash (it looked
+		-- like dashing to the right). They are only for camera lock and lock-on, where it strafes and backs up.
+		-- In object space, forward is -Z and right is +X. A side has to clearly win before the cycle changes.
+		local dir = "W"
+		if not humanoid.AutoRotate then
+			local localDir = root.CFrame:VectorToObjectSpace(flat).Unit
+			if localDir.Z > 0.6 then
+				dir = "S"
+			elseif localDir.X > 0.75 then
+				dir = "D"
+			elseif localDir.X < -0.75 then
+				dir = "A"
+			end
 		end
 		local running = speed >= RUN_FROM
 		local base = if running then RUN_ANIM_SPEED else WALK_ANIM_SPEED
