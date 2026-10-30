@@ -16,6 +16,7 @@ export type Item = {
 	look: string?, -- how it looks on the character (server/Gear), for armour and off-hands
 	shirt: number?, -- chest: Shirt template ID put on the character (server/Gear)
 	pants: number?, -- legs: Pants template ID
+	palette: string?, -- chest and legs: the outfit set it belongs to
 	class: string?, -- weapons and off-hands: the only class that can equip it
 	model: string?, -- main-hand weapons: the WeaponLibrary key (or bow tint in server/Weapons) it shows as
 }
@@ -145,54 +146,78 @@ Items.CLASS_GEAR = {
 	},
 }
 
--- Armour per slot. `look` names a model in ServerStorage.OathGear (server/Gear); `shirt` and `pants` are clothing
--- template IDs. Every look is a real asset from the cleared places (docs/ASSETS.md); feet and rings have none yet,
--- so they change stats only. The first of each list is the starter.
+-- Armour per slot. Only worn clothing shows: chest items carry a Shirt template and legs items a Pants template
+-- (server/Gear puts them on the character; the avatar's own come back when the slot is empty). Every outfit is a
+-- matching Shirt and Pants set from one source, so chest and legs share a name and a `palette`; Equip best keeps
+-- the legs in the chest's palette. Chest and legs are clothing only; small 3D pieces (gauntlets, Tasset Greaves on
+-- the feet slot, necklaces, scarf, mantle) stay. Head and ring have no look for now: stats only.
+-- Sources and the art rule are in docs/ASSETS.md. The first of each list is the starter.
 Items.ARMOR = {
 	head = {
-		{ name = "Warrior's Helm", look = "warriorHelm" }, -- vania
-		{ name = "Fallen's Shroud", look = "fallenShroud" }, -- Excry
-		{ name = "Wanderer's Hood", look = "hxhHood" }, -- hxh
-		{ name = "Lost Crown", look = "lostCrown" }, -- vania
+		{ name = "Iron Helm" },
+		{ name = "Leather Cap" },
+		{ name = "Traveller's Hood" },
+		{ name = "Circlet of Dawn" },
 	},
 	chest = {
-		{ name = "Wayfarer's Longcoat", shirt = 12898857876 }, -- vania
-		{ name = "Frostfur Hunter Coat", shirt = 4798579756 }, -- Excry
-		{ name = "Shadowleather Jerkin", shirt = 6523934418 }, -- Excry
-		{ name = "Wrapped Vest", shirt = 14945189243 }, -- Excry
-		{ name = "Templar Vestments", shirt = 9793008658 }, -- Excry
-		{ name = "Vigil Captain's Coat", shirt = 12898987440 }, -- vania
-		{ name = "Beastfur Vest", shirt = 513647064 }, -- hxh
-		{ name = "Priest's Cassock", shirt = 4299026991 }, -- hxh
-		{ name = "Monster Hunter's Robe", look = "hunterRobe", shirt = 6523934418 }, -- vania robe over leather
-		{ name = "Strapped Jerkin", look = "chestStrap", shirt = 14945189243 }, -- vania strap over wraps
+		{ name = "Wayfarer's Longcoat", shirt = 12898857876, palette = "leather" }, -- vania
+		{ name = "Vigil Captain's Coat", shirt = 12898987440, palette = "noble" }, -- vania
+		{ name = "Nobleman's Frock Coat", shirt = 12898946049, palette = "noble" }, -- vania
+		{ name = "Navy Nobleman's Coat", shirt = 12898960235, palette = "noble" }, -- vania
+		{ name = "Nightwatch Coat", shirt = 9963316538, palette = "noble" }, -- Excry
+		{ name = "Sapphire Plate", shirt = 6700094348, palette = "steel" }, -- vania
+		{ name = "Frostfur Hunter Coat", shirt = 4798579756, palette = "hunter" }, -- Excry
+		{ name = "Beastfur Vest", shirt = 513647064, palette = "hunter" }, -- hxh
+		{ name = "Shadowleather Jerkin", shirt = 6523934418, palette = "dark" }, -- Excry
+		{ name = "Wrapped Vest", shirt = 14945189243, palette = "dark" }, -- Excry
+		{ name = "Bandaged Leathers", shirt = 97795805, palette = "dark" }, -- Excry
+		{ name = "Gravecloth Tunic", shirt = 4644385653, palette = "dark" }, -- Excry
+		{ name = "Duskwalker Coat", shirt = 8721840456, palette = "dark" }, -- Excry
+		{ name = "Tattered Wanderer's Tunic", shirt = 2602452291, palette = "dark" }, -- Excry
+		{ name = "Templar Vestments", shirt = 9793008658, palette = "priest" }, -- Excry
+		{ name = "Priest's Cassock", shirt = 4299026991, palette = "priest" }, -- hxh
 	},
 	hands = {
-		{ name = "Leather Gauntlets", look = "leatherGauntlet" }, -- vania
+		{ name = "Leather Gauntlets", look = "leatherGauntlet" }, -- vania (small 3D pieces stay)
+		{ name = "Leather Gloves" },
+		{ name = "Chain Gauntlets" },
+		{ name = "Ashwood Bracers" },
 	},
 	legs = {
-		{ name = "Wayfarer's Leggings", pants = 12898848920 }, -- vania
-		{ name = "Frostfur Leggings", pants = 4798577670 }, -- Excry
-		{ name = "Shadowleather Trousers", pants = 6522451827 }, -- Excry
-		{ name = "Templar Greaves", pants = 9793004800 }, -- Excry
-		{ name = "Vigil Captain's Breeches", pants = 12898979861 }, -- vania
-		{ name = "Beastfur Greaves", pants = 513647982 }, -- hxh
-		{ name = "Priest's Trousers", pants = 1670562937 }, -- hxh
-		{ name = "Tasset Greaves", look = "warriorGreaves", pants = 12898848920 }, -- vania
+		{ name = "Wayfarer's Leggings", pants = 12898848920, palette = "leather" },
+		{ name = "Vigil Captain's Breeches", pants = 12898979861, palette = "noble" },
+		{ name = "Nobleman's Breeches", pants = 12898939449, palette = "noble" },
+		{ name = "Navy Nobleman's Breeches", pants = 12898956879, palette = "noble" },
+		{ name = "Nightwatch Trousers", pants = 9962616226, palette = "noble" },
+		{ name = "Sapphire Greaves", pants = 6700096491, palette = "steel" },
+		{ name = "Frostfur Leggings", pants = 4798577670, palette = "hunter" },
+		{ name = "Beastfur Greaves", pants = 513647982, palette = "hunter" },
+		{ name = "Shadowleather Trousers", pants = 6522451827, palette = "dark" },
+		{ name = "Wrapped Trousers", pants = 14945190355, palette = "dark" },
+		{ name = "Bandaged Trousers", pants = 97795809, palette = "dark" },
+		{ name = "Gravecloth Trousers", pants = 4644385578, palette = "dark" },
+		{ name = "Duskwalker Trousers", pants = 8721833084, palette = "dark" },
+		{ name = "Tattered Wanderer's Trousers", pants = 2602453636, palette = "dark" },
+		{ name = "Templar Greaves", pants = 9793004800, palette = "priest" },
+		{ name = "Priest's Trousers", pants = 1670562937, palette = "priest" },
 	},
-	feet = { -- no boots in the cleared places yet: stats only
+	feet = {
 		{ name = "Soft Boots" },
+		{ name = "Tasset Greaves", look = "warriorGreaves" }, -- vania
 		{ name = "Iron Sabatons" },
 		{ name = "Marching Boots" },
 		{ name = "Ashen Treads" },
 	},
 	neck = {
+		{ name = "Pilgrim's Token" },
 		{ name = "Gold Necklace", look = "goldNecklace" }, -- Excry
 		{ name = "Silver Necklace", look = "silverNecklace" }, -- Excry
 		{ name = "Ragged Scarf", look = "raggedScarf" }, -- Excry
 		{ name = "Fur Mantle", look = "furCloak" }, -- vania
+		{ name = "Amulet of Embers" },
+		{ name = "Oathstone Pendant" },
 	},
-	ring = { -- too small to show on an R6 hand: stats only
+	ring = {
 		{ name = "Band of Ash" },
 		{ name = "Signet of the Warden" },
 		{ name = "Ring of Quiet Steps" },

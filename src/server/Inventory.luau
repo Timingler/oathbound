@@ -101,6 +101,7 @@ local function makeItem(
 		look = base.look,
 		shirt = base.shirt,
 		pants = base.pants,
+		palette = base.palette,
 		model = base.model,
 		class = classOfBase(slot, base),
 		slot = slot,
@@ -301,6 +302,22 @@ local function handle(player: Player, req)
 				end
 			end
 			inv.equipped[slot.id] = best and best.uid or nil
+		end
+		-- Mixed outfits look wrong: wear the best legs in the chest's palette when there are any.
+		local chest = inv.items[inv.equipped.chest or ""]
+		if chest and chest.palette then
+			local best, bestScore = nil, -1
+			for _, item in inv.items do
+				if item.slot == "legs" and item.palette == chest.palette then
+					local score = Items.rarity(item.rarity).rank * 1000 + item.itemLevel
+					if score > bestScore then
+						best, bestScore = item, score
+					end
+				end
+			end
+			if best then
+				inv.equipped.legs = best.uid
+			end
 		end
 	else
 		return

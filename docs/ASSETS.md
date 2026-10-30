@@ -81,30 +81,33 @@ Fixed copies of all four kits, with the new IDs already swapped in, are in the p
 
 ### Gear looks (2026-10-30)
 
-`server/Gear.luau` shows only real assets from the cleared places; the earlier part-built placeholders are gone. Rule for picks: Western medieval fantasy (knight, ranger, priest, rogue, noble); no East Asian garments, no modern wear, no oversized novelty pieces. Each pick was previewed on an R6 rig.
+Rule for picks: Western medieval fantasy (knight, ranger, priest, rogue, noble); no modern wear, no East Asian garments, no named-character costumes, nothing oversized. Every pick was previewed on an R6 rig.
 
-**Meshes** live in the place, in `ServerStorage.OathGear` (rebuilt there from the source files, because SurfaceAppearance cannot be set up at runtime). Save the place to keep them. Each model is either an Accessory or groups of parts whose root carries `Limb`, `Offset` and optionally `Mirror`.
+**Chest and legs are worn clothing only** (Shirt / Pants templates, applied by `server/Gear.luau`; the avatar's own clothing returns when the slot is empty). Each outfit is a matching set from one source with a `palette`; Equip best keeps the legs in the chest's palette.
 
-| Look | Item | Source |
+| Outfit | Palette | Source |
 |---|---|---|
-| warriorHelm | Warrior's Helm | vania Accesories.Head.Warrior Helmet |
-| fallenShroud | Fallen's Shroud | Excry Items.Accessories.FaceWear |
-| hxhHood | Wanderer's Hood | hxh Equipment.Head.Hood |
-| lostCrown | Lost Crown | vania Missions.Tasks.Lost Crown |
-| hunterRobe | Monster Hunter's Robe | vania StarterCharacterCMHR (robe and arm pieces) |
-| chestStrap | Strapped Jerkin | vania Accesories.Chest.Chest Strap |
-| leatherGauntlet | Leather Gauntlets | vania Accesories.Arms.Leather Gauntlet (both arms) |
-| warriorGreaves | Tasset Greaves | vania Accesories.Waist.Warrior Greaves |
-| goldNecklace, silverNecklace | Gold / Silver Necklace | Excry Items.Trinkets |
-| raggedScarf | Ragged Scarf | Excry Items.Accessories.Cape |
-| furCloak | Fur Mantle | vania Accesories.Neck.OldFur Cloak |
-| lantern | Lantern of Vigil (Cleric off-hand) | vania StarterCharacter thorns.Lantern |
+| Wayfarer's (starter) | leather | vania NPC Brown Trenchcoat |
+| Vigil Captain's | noble | vania Imperial Captain |
+| Nobleman's, Navy Nobleman's | noble | vania Black / Navy Nobleman |
+| Nightwatch | noble | Excry NonDialogue clothing |
+| Sapphire Plate / Greaves | steel | vania Workspace.Map.blackstar52905 |
+| Frostfur | hunter | Excry Klaus |
+| Beastfur | hunter | hxh Uvogin |
+| Shadowleather | dark | Excry Qix |
+| Wrapped | dark | Excry TheStranger |
+| Bandaged | dark | Excry NpcTemplate |
+| Gravecloth, Duskwalker, Tattered Wanderer's | dark | Excry NonDialogue clothing |
+| Templar | priest | Excry NonDialogue clothing |
+| Priest's | priest | hxh Priest |
 
-**Clothing** (Shirt / Pants templates, put on the character; the avatar's own come back when the slot is empty): vania Brown Trenchcoat (Wayfarer's), Imperial Captain (Vigil Captain's); Excry Klaus (Frostfur), Qix (Shadowleather), TheStranger (Wrapped Vest), NonDialogue set B (Templar); hxh Uvogin (Beastfur), Priest (Priest's Cassock / Trousers).
+Full sets per palette: leather 1, noble 4, steel 1, hunter 2, dark 6, priest 2.
 
-Rejected: vania Farmer, Bandit, Formal Vest, Black and Navy Nobleman (modern suits); Imperial Recruit (a modern uniform); vania Boss Cloak (a huge white veil, out of place); Warrior Chausses (oversized on R6 legs); hxh character outfits (Kurapika, Chrollo, Netero, Feitan: costumes of specific characters), Cherry Blossom Haori, Armor1 gi, Excry NonDialogue set A (gi and hakama), Wooden and big Beads necklaces (East Asian); REFramework enemy rig (modern); the other Excry NonDialogue sets (modern or anime character wear).
+**Small 3D pieces** stay, as models in the place under `ServerStorage.OathGear` (save the place to keep them): Leather Gauntlets (hands, vania), Tasset Greaves (feet slot, vania Warrior Greaves), Gold and Silver Necklace and Ragged Scarf (neck, Excry), Fur Mantle (neck, vania OldFur Cloak), Lantern of Vigil (Cleric off-hand, vania). Helmets, hoods and the crown are removed for now; their models are unused in OathGear.
 
-No shields, tomes, quivers, boots or rings exist in the cleared files, so those items change stats only. Every Warden, Assassin and Ranger off-hand is stats only for now.
+Rejected: the vania Boss Cloak (white veil), Warrior Chausses (oversized); haori, gi and hakama sets, bead necklaces (East Asian); Kurapika, Chrollo, Netero, Feitan outfits (named characters); farmer, bandit, waistcoat, suits, hoodies, jeans, graphic tees, kimono and tactical gear from the remaining Excry, hxh, REFramework and Anime Brigade clothing (modern, sci-fi or East Asian).
+
+No shields, tomes, quivers, boots or rings exist in the cleared files: head, ring and most off-hands are stats only.
 
 ## Rig type
 
