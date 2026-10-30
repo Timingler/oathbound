@@ -213,7 +213,8 @@ local function startAim()
 	end
 	aiming = true
 	aimStart = os.clock()
-	savedWalkSpeed = humanoid.WalkSpeed
+	-- Aiming ends a sprint (server/CombatService), so the walk speed comes back without it.
+	savedWalkSpeed = if humanoid.WalkSpeed == Constants.SPRINT_SPEED then Constants.WALK_SPEED else humanoid.WalkSpeed
 	humanoid.WalkSpeed = AIM_WALK_SPEED
 	playAimTracks(humanoid)
 	send(R.AIM_START)

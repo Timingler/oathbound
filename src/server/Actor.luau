@@ -86,6 +86,7 @@ function Actor:applyKit(kit, armorType: string?, maxHealth: number?)
 		self.resource = 0
 	end
 	self.stamina = Constants.STAMINA_POOL
+	self.sprinting = false
 	self.combo = 0
 	self.bulwark = 0
 	self.shield = 0

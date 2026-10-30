@@ -20,6 +20,8 @@ return {
 		CLASS = "class", -- with class name, out of combat only
 		AIM_START = "aimStart", -- Ranger: right click held, the bow starts drawing
 		AIM_END = "aimEnd",
+		SPRINT_START = "sprintStart", -- double-tap W (client/Sprint); the server drains stamina
+		SPRINT_END = "sprintEnd",
 	},
 
 	SNAPSHOT_RATE = 0.1,

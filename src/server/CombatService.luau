@@ -501,6 +501,21 @@ local function handleRequest(actor, req)
 		actor.aimPoint = nil
 	end
 
+	-- Sprint (client/Sprint). Anything else you do ends it.
+	if kind == R.SPRINT_START then
+		actor.sprinting = actor.stamina >= Constants.SPRINT_MIN and not actor.blocking
+		return
+	elseif kind == R.SPRINT_END then
+		if actor.sprinting then
+			actor.sprinting = false
+			actor.lastExertion = now
+		end
+		return
+	elseif actor.sprinting then
+		actor.sprinting = false
+		actor.lastExertion = now
+	end
+
 	-- A hotbar tool is out (server/Tools): attacks use the tool, and anything else that needs the weapon draws it
 	-- first. Block and dodge work either way.
 	if actor.player and actor.player:GetAttribute("HeldTool") then
@@ -632,7 +647,13 @@ local function tick()
 			if actor.resourceRegen > 0 then
 				actor:gainResource(actor.resourceRegen * (1 + actor.stats.regeneration) * dt)
 			end
-			if not actor.blocking then
+			if actor.sprinting then
+				actor.stamina = math.max(0, actor.stamina - Constants.SPRINT_DRAIN * dt)
+				actor.lastExertion = now
+				if actor.stamina <= 0 then
+					actor.sprinting = false -- client/Sprint sees this in the snapshot and slows down
+				end
+			elseif not actor.blocking and now - (actor.lastExertion or -math.huge) >= Constants.STAMINA_REGEN_DELAY then
 				actor.stamina = math.min(Constants.STAMINA_POOL, actor.stamina + Constants.STAMINA_REGEN * dt)
 			end
 			if actor.interceptBy and now >= actor.interceptUntil then
@@ -708,6 +729,7 @@ local function snapshotFor(actor)
 			action = actor.timeline.action and actor.timeline.action.name or nil,
 			busy = actor.timeline:busyFor(now),
 			blocking = actor.blocking,
+			sprinting = actor.sprinting == true,
 			dead = actor.dead,
 			cds = cds,
 			wd = actor.wd,

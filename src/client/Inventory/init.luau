@@ -17,6 +17,7 @@ local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Items = require(Shared.Items)
 local AssetIds = require(Shared.AssetIds)
 local Net = require(Shared.Net)
+local Constants = require(Shared.Constants)
 local Theme = require(script.Theme)
 local Effects = require(script.Parent.Effects)
 
@@ -1121,7 +1122,8 @@ function Inventory.open()
 		frozen = {
 			humanoid = humanoid,
 			root = root,
-			walkSpeed = humanoid.WalkSpeed,
+			-- A sprint ends when the menu opens (client/Sprint), so it comes back at walking speed.
+			walkSpeed = if humanoid.WalkSpeed == Constants.SPRINT_SPEED then Constants.WALK_SPEED else humanoid.WalkSpeed,
 			jumpPower = humanoid.JumpPower,
 			jumpHeight = humanoid.JumpHeight,
 			anchored = root.Anchored,
