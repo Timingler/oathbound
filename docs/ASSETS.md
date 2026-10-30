@@ -25,6 +25,30 @@ The movement, wall run, climb and bow animations come from four free Creator Sto
 
 The server plays each one when the action goes on the timeline, stretched over its wind-up plus recovery. The boss and dummy are built from parts, so they are not animated.
 
+### VFX and sounds
+
+`client/Effects.luau` plays them from the server's Fx events. The particle effects are generated into `src/shared/VfxLibrary.luau` by `tools/reupload/vfx.py`; textures keep the source's image IDs, which load in any game. Sounds are listed in `AssetIds.Sfx`. Short sound effects are public on Roblox, but any that a creator kept private will be silent; swap its ID if so.
+
+| Event | VFX (source) | Sound (source) |
+|---|---|---|
+| Warden / Assassin / Cleric hit | slash / stab / blunt impact (vania) | sword hit (hxh), sword stab, blunt (vania) |
+| Hit taken while blocking | block hit (hxh) | sword block (hxh) |
+| Hit taken | blood hit (vania) | bloody hit (hxh) |
+| Parry | parry burst (vania) | parry, sword clash (hxh) |
+| Heal | small magic circle (vania) | heal (vania) |
+| Boss Broken | block break (vania) | block break (vania) |
+| Boss Ash Sweep | furious slam (vania) | blunt heavy (vania) |
+| Attack starts, dodge, boss swing, boss cast | | swing, roll, great sword heavy, charge (vania) |
+
+## Other places checked (2026-10-30)
+
+| Place | Verdict |
+|---|---|
+| vania, hxh, CHAIN, jjk cool map | Cleared by Charles. vania (gothic fantasy) is the best match; CHAIN is horror; jjk is a map only |
+| Quirkbound, Newest Ghoul RE, New moon | Not used. Their scripts carry "Saved by UniversalSynSaveInstance (Join to Copy Games)" and decompiler stamps, so they were copied from live games with an exploit |
+| HAV DEV SERVER | Not used yet. Two scripts carry decompiler/Synapse stamps |
+| Excry Main Game, Cursed Reality, BATTLECOMBATR6, Anime Brigade, REFrameworkV2 | No exploit stamps or licence notes. Not used until Charles confirms where they came from. Excry has the most fantasy-fitting sounds and VFX |
+
 **Credit:** the Run System's licence asks for "Run and Walk System by @skaterstudios" in the game description. Add it before publishing.
 
 Fixed copies of all four kits, with the new IDs already swapped in, are in the project files under `oathbound/fixed-kits/`. Insert a `.rbxm` with Explorer > right-click > Insert from File.

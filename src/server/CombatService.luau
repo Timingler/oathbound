@@ -201,7 +201,15 @@ function CombatService.strike(source, target, amount: number, def, isTick: boole
 	end
 
 	local pos = target:position()
-	CombatService.fx({ t = "hit", src = source.id, dst = target.id, amount = damage, crit = crit, pos = pos })
+	CombatService.fx({
+		t = "hit",
+		src = source.id,
+		dst = target.id,
+		amount = damage,
+		crit = crit,
+		pos = pos,
+		class = source.kit and source.kit.id,
+	})
 	CombatService.log(
 		source,
 		string.format("%s hit %s for %s%s", def.name, target.name, fmt(damage), crit and " (crit)" or "")

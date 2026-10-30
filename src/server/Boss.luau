@@ -125,7 +125,7 @@ function Boss:addBreak(amount: number)
 		self.breakLockedUntil = now + Constants.BREAK_STUN + Constants.BREAK_LOCK
 		self:clearTelegraph()
 		self.cast = nil
-		self.service.fx({ t = "broken", dst = self.actor.id })
+		self.service.fx({ t = "broken", dst = self.actor.id, pos = self.actor:position() })
 	end
 end
 
@@ -224,6 +224,8 @@ function Boss:resolveTelegraph(now: number)
 	self.actor.damageScale = mult
 
 	local look = flat(origin.LookVector).Unit
+	local center = if attack.shape == "circle" then origin.Position else origin.Position + look * (attack.range / 2)
+	self.service.fx({ t = "bossAttack", key = tele.key, color = attack.color, pos = center })
 	local minDot = attack.degrees and math.cos(math.rad(attack.degrees / 2)) or -1
 	for _, target in self.service.living("players") do
 		local offset = flat((target:position() :: Vector3) - origin.Position)
@@ -339,7 +341,13 @@ function Boss:step(now: number)
 	if now >= due.cast then
 		due.cast = now + Boss.CAST.every
 		self.cast = { startedAt = now, endsAt = now + Boss.CAST.duration }
-		self.service.fx({ t = "cast", dst = actor.id, name = Boss.CAST.name, duration = Boss.CAST.duration })
+		self.service.fx({
+			t = "cast",
+			dst = actor.id,
+			name = Boss.CAST.name,
+			duration = Boss.CAST.duration,
+			pos = actor:position(),
+		})
 	elseif now >= due.buster then
 		due.buster = now + Boss.ATTACKS.buster.every
 		self:startTelegraph("buster", now)

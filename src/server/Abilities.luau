@@ -89,6 +89,13 @@ function Abilities.tryStart(service, actor, def, now: number): (boolean, string?
 
 	actor.timeline:start(def, now, actor.stats.actionSpeed, { target = target })
 	Animations.action(actor, def, now)
+	service.fx({
+		t = "swing",
+		src = actor.id,
+		class = actor.kit and actor.kit.id,
+		ability = def.id,
+		pos = actor:position(),
+	})
 	return true
 end
 

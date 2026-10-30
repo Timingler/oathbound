@@ -102,6 +102,24 @@ AssetIds.Combat = {
 	},
 }
 
+-- Combat sounds from the vania, hxh and CHAIN places, played by client/Effects.luau. Short sound effects are public
+-- on Roblox, so these IDs play in any game; one that does not will just stay silent. Lists pick one at random.
+AssetIds.Sfx = {
+	swing = { 4898257652, 4898262512 },
+	slash = { 3932145654, 3932145123, 3932142219, 3932141920 },
+	stab = { 4471648128 },
+	blunt = { 12327206250, 12327206688, 12327207277 },
+	blockHit = { 604798957, 604238471, 604800072 },
+	parry = { 4516507682, 4953118406, 4953118940 },
+	guardBreak = { 4898185564 },
+	hurt = { 3739363791, 4086189694, 4086190131 },
+	heal = { 12350726490 },
+	dodge = { 12076648787 },
+	bossSwing = { 12548800970 },
+	bossSlam = { 12826036518 },
+	bossCast = { 6856435312 },
+}
+
 function AssetIds.uri(id: number): string
 	return "rbxassetid://" .. tostring(id)
 end
