@@ -2,7 +2,8 @@
 -- character often strafes or backs up; this picks the forward, left, back or right cycle from the velocity
 -- relative to where the character faces.
 -- Plays at Movement priority over the default Animate script and steps aside while jumping, falling, climbing
--- or swimming, so Animate's own animations show then. R6 only: on an R15 rig it does nothing.
+-- or swimming, so Animate's own animations show then. Standing still with a weapon out, it plays nothing so the
+-- weapon hold pose shows. R6 only: on an R15 rig it does nothing.
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -83,7 +84,8 @@ local function setup(character: Model)
 		local flat = Vector3.new(velocity.X, 0, velocity.Z)
 		local speed = flat.Magnitude
 		if speed < MOVING then
-			switch("Idle", 1)
+			-- A weapon hold (server/Weapons) owns the standing pose; Animate's idle still moves the legs.
+			switch(if character:GetAttribute("WeaponHold") then nil else "Idle", 1)
 			return
 		end
 		-- In object space, forward is -Z and right is +X.

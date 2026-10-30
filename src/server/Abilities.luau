@@ -75,7 +75,8 @@ function Abilities.tryStart(service, actor, def, now: number): (boolean, string?
 
 	local target = pickTarget(service, actor, def)
 	if def.effect == "strike" or def.effect == "finisher" or def.effect == "dot" then
-		if not target then
+		-- A basic attack swings even with nobody in reach, so a click always does something. It whiffs at fire time.
+		if not target and def ~= actor.kit.basic then
 			return false, "no target in range"
 		end
 	elseif def.effect == "heal" or def.effect == "intercept" then
@@ -143,7 +144,9 @@ function Abilities.fire(service, actor, def, payload, now: number)
 			actor:gainResource(def.gain)
 		end
 		if not target then
-			service.log(actor, def.name .. " missed")
+			if def ~= actor.kit.basic then
+				service.log(actor, def.name .. " missed")
+			end
 			return
 		end
 		local coeff = def.coeff

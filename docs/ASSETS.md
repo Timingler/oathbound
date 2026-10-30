@@ -29,6 +29,8 @@ The server plays each one when the action goes on the timeline, stretched over i
 
 `server/Weapons.luau` puts vania's weapon models in each class's right hand: the Mika sword (Warden), Long Dagger (Assassin) and Great Hammer (Cleric). The animations were made on vania's rig, which moves a `Hilt` part joined to the Right Arm, so the weapon is welded to a Hilt joined the same way. `tools/reupload/weapons.py` generates `src/shared/WeaponLibrary.luau`. The Mika sword uses a SurfaceAppearance in vania, which scripts cannot copy, so it shows plain colours here.
 
+Like vania's WeaponHandler, the server loops a hold pose while the weapon is out, so the arm grips it between attacks (`AssetIds.Hold`). The poses are vania's "Dagger idle" (Assassin), "idle 1 hand" (Warden) and "greatsword idle" (Cleric; vania has no hammer idle, and this one rests the hammer on the shoulder). They are not uploaded yet: the KeyframeSequences are in the place under `ServerStorage.OathHolds` (DaggerHold, SwordHold, GreatswordHold). To upload one, right-click it in Studio, choose **Save to Roblox**, and put the new ID in `AssetIds.Hold`. Until then the ID is 0 and the arm hangs as before.
+
 ### VFX and sounds
 
 `client/Effects.luau` plays them from the server's Fx events. The particle effects are generated into `src/shared/VfxLibrary.luau` by `tools/reupload/vfx.py`; textures keep the source's image IDs, which load in any game. Sounds are listed in `AssetIds.Sfx`. Short sound effects are public on Roblox, but any that a creator kept private will be silent; swap its ID if so.
