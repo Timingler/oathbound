@@ -36,6 +36,7 @@ local orbit = 0 -- camera angle around the character, radians
 local orbitTarget = 0
 local pedestal: Model? = nil
 local savedCameraType: Enum.CameraType? = nil
+local frozen: any = nil -- what Inventory.open changed to hold the character still, restored on close
 local neutralTrack: AnimationTrack? = nil
 local weaponShown = true
 local hiddenParts: { [BasePart]: number } = {} -- weapon part -> its transparency before we hid it
@@ -1084,11 +1085,26 @@ function Inventory.open()
 	if controls then
 		controls:Disable()
 	end
+	-- Belt and braces: no walk or jump speed, and the root pinned in place (this client owns its physics), so
+	-- nothing can move the character while the menu is open, even mid-run or mid-air. All undone on close.
 	local humanoid = (player.Character :: Model):FindFirstChildOfClass("Humanoid")
 	if humanoid then
 		humanoid:Move(Vector3.zero)
+		frozen = {
+			humanoid = humanoid,
+			root = root,
+			walkSpeed = humanoid.WalkSpeed,
+			jumpPower = humanoid.JumpPower,
+			jumpHeight = humanoid.JumpHeight,
+			anchored = root.Anchored,
+		}
+		humanoid.WalkSpeed = 0
+		humanoid.JumpPower = 0
+		humanoid.JumpHeight = 0
 	end
-	root.AssemblyLinearVelocity = Vector3.new(0, root.AssemblyLinearVelocity.Y, 0)
+	root.AssemblyLinearVelocity = Vector3.zero
+	root.AssemblyAngularVelocity = Vector3.zero
+	root.Anchored = true
 	ContextActionService:BindActionAtPriority("OathInventoryBlock", sinkKeys, false, Enum.ContextActionPriority.High.Value + 50, table.unpack(BLOCKED_KEYS))
 	remote:FireServer({ op = "sync" })
 
@@ -1119,6 +1135,18 @@ function Inventory.close()
 	pendingFlash = nil
 	clearGlow()
 	ui.tooltip.Visible = false
+	if frozen then
+		local f = frozen
+		frozen = nil
+		if f.humanoid.Parent then
+			f.humanoid.WalkSpeed = f.walkSpeed
+			f.humanoid.JumpPower = f.jumpPower
+			f.humanoid.JumpHeight = f.jumpHeight
+		end
+		if f.root.Parent then
+			f.root.Anchored = f.anchored
+		end
+	end
 	local controls = playerControls()
 	if controls then
 		controls:Enable()
