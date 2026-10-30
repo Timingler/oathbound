@@ -2,16 +2,17 @@
 return function(t)
 	local Kits = t.shared("Kits")
 
-	t.test("three prototype classes, one per role", function()
-		t.equal(#Kits.ORDER, 3)
+	t.test("four prototype classes: a damage dealer at each range, a healer and a tank", function()
+		t.equal(#Kits.ORDER, 4)
 		t.equal(Kits.Assassin.role, "damage")
+		t.equal(Kits.Ranger.role, "damage")
 		t.equal(Kits.Cleric.role, "healer")
 		t.equal(Kits.Warden.role, "tank")
 		t.equal(Kits.Warden.isTank, true)
 	end)
 
 	t.test("every timed ability has wind-up, recovery and a known effect", function()
-		local effects = { strike = true, finisher = true, dot = true, heal = true, areaHeal = true, cleave = true, smokeStep = true, intercept = true }
+		local effects = { strike = true, finisher = true, dot = true, smite = true, heal = true, areaHeal = true, cleave = true, smokeStep = true, intercept = true, shot = true, volley = true, disengage = true }
 		for _, name in Kits.ORDER do
 			local kit = Kits[name]
 			local list = {}
@@ -37,5 +38,6 @@ return function(t)
 	t.test("interrupts and mobility use the 0.5 haste tag", function()
 		t.equal(Kits.Warden.skills[1].hasteTag, 0.5) -- Shield Bash
 		t.equal(Kits.Assassin.skills[3].hasteTag, 0.5) -- Smoke Step
+		t.equal(Kits.Ranger.skills[3].hasteTag, 0.5) -- Disengage
 	end)
 end

@@ -15,6 +15,12 @@ local Scaling = require(Shared.Scaling)
 
 local Actor = require(script.Parent.Actor)
 local Abilities = require(script.Parent.Abilities)
+local Animations = require(script.Parent.Animations)
+local Poise = require(script.Parent.Poise)
+local Ragdoll = require(script.Parent.Ragdoll)
+local Glider = require(script.Parent.Glider)
+local Weapons = require(script.Parent.Weapons)
+local Projectiles = require(script.Parent.Projectiles)
 
 local CombatService = {}
 
@@ -23,7 +29,13 @@ CombatService.actors = {} :: { [number]: any }
 CombatService.byPlayer = {} :: { [Player]: any }
 CombatService.classOf = {} :: { [Player]: string }
 CombatService.boss = nil
+-- Set by server/Quests: something quests may count happened for `actor` ("hitDummy", "killDuelist").
+CombatService.onEvent = function(_actor, _event: string) end
+-- Hotbar hooks, set by server/Inventory: an attack with a tool out, and putting the tool away.
+CombatService.onToolUse = function(_actor) end
+CombatService.drawWeapon = function(_actor) end
 CombatService.dummy = nil
+CombatService.npcs = {} -- Duelists (and the dummy), stepped every tick
 CombatService.meters = {} -- training dummy meters: actor id -> { first, last, total }
 
 local queues = {} :: { [Player]: { any } }
@@ -183,13 +195,29 @@ function CombatService.strike(source, target, amount: number, def, isTick: boole
 		mult, crit = Formulas.rollCrit(source.stats.critChance, source.stats.critMult, rng:NextNumber())
 	end
 	local damage = amount * mult * Formulas.outgoingMultiplier(nil)
-	damage *= 1 - Formulas.totalDR({ passive = target.enemyDR or 0 })
+	local blocked = false
+	if target.kind == "npc" then
+		-- Duelists defend like players: a roll avoids the hit, a block from the front takes most of it.
+		if target:isUntouchable(now) then
+			CombatService.fx({ t = "avoid", src = source.id, dst = target.id, text = "Dodged", pos = target:position() })
+			return
+		end
+		local sp, tp = source:position(), target:position()
+		if target.blocking and sp and tp then
+			local toSource = flat(sp - tp)
+			blocked = toSource.Magnitude < 0.01 or flat(target:lookVector()).Unit:Dot(toSource.Unit) > 0.2
+		end
+	end
+	damage *= 1 - Formulas.totalDR({ passive = target.enemyDR or 0, block = blocked and Constants.BLOCK_DR or 0 })
 
 	source.lastCombat = now
 	target.lastCombat = now
 
 	if target.kind == "dummy" then
 		meter(source, damage)
+		if not isTick then
+			CombatService.onEvent(source, "hitDummy")
+		end
 	else
 		target.health = math.max(0, target.health - damage)
 		local tankMult = source.isTank and Constants.TANK_THREAT_MULT or 1
@@ -200,11 +228,32 @@ function CombatService.strike(source, target, amount: number, def, isTick: boole
 	end
 
 	local pos = target:position()
-	CombatService.fx({ t = "hit", src = source.id, dst = target.id, amount = damage, crit = crit, pos = pos })
+	CombatService.fx({
+		t = "hit",
+		src = source.id,
+		dst = target.id,
+		amount = damage,
+		crit = crit,
+		pos = pos,
+		class = source.kit and source.kit.id,
+		blocked = blocked,
+		heavy = crit or (def.windup or 0) >= 0.6, -- client/Effects shakes the attacker's camera
+		uid = source.player and source.player.UserId,
+	})
 	CombatService.log(
 		source,
-		string.format("%s hit %s for %s%s", def.name, target.name, fmt(damage), crit and " (crit)" or "")
+		string.format("%s hit %s for %s%s%s", def.name, target.name, fmt(damage), crit and " (crit)" or "", blocked and " (blocked)" or "")
 	)
+	if not isTick then
+		Animations.hitStop(source, crit or (def.windup or 0) >= 0.6)
+		if not blocked then
+			if Poise.uses(target) then
+				Poise.hit(target, source, def, crit, now) -- enemies flinch only when their poise breaks
+			else
+				Animations.hurt(target)
+			end
+		end
+	end
 end
 
 function CombatService.applyDot(source, target, def, total: number)
@@ -235,7 +284,15 @@ function CombatService.heal(source, target, amount: number, def)
 		addThreat(boss.actor, source, effective * Constants.HEAL_THREAT_MULT)
 	end
 
-	CombatService.fx({ t = "heal", src = source.id, dst = target.id, amount = effective, crit = crit, pos = target:position() })
+	CombatService.fx({
+		t = "heal",
+		src = source.id,
+		dst = target.id,
+		ability = def and def.id,
+		amount = effective,
+		crit = crit,
+		pos = target:position(),
+	})
 	CombatService.log(
 		source,
 		string.format(
@@ -247,6 +304,16 @@ function CombatService.heal(source, target, amount: number, def)
 			crit and " (crit)" or ""
 		)
 	)
+end
+
+function CombatService.fireArrow(actor, def, target, draw: number?)
+	Projectiles.fireArrow(CombatService, actor, def, target, draw)
+end
+
+-- A Volley: lands on the circle around `point` after the arrows fall.
+function CombatService.volley(actor, def, point: Vector3)
+	CombatService.fx({ t = "volley", src = actor.id, pos = point, radius = def.radius, delay = def.delay })
+	Projectiles.area(CombatService, actor, def, point, CombatService.now + def.delay)
 end
 
 function CombatService.interrupt(source, target)
@@ -305,6 +372,7 @@ function CombatService.enemyHit(enemy, target, written: number, attack)
 		if now - target.blockStart <= Constants.PARRY_WINDOW then
 			CombatService.fx({ t = "avoid", dst = target.id, text = "Parry!", pos = tp })
 			CombatService.log(target, "Parried " .. attack.name)
+			Animations.parry(target)
 			if enemy.onParried then
 				enemy:onParried(target)
 			end
@@ -336,7 +404,19 @@ function CombatService.enemyHit(enemy, target, written: number, attack)
 	toHealth, target.shield = Formulas.absorb(damage, target.shield)
 	target.health = math.max(0, target.health - toHealth)
 
-	CombatService.fx({ t = "hurt", dst = target.id, amount = toHealth, pos = tp, blocked = blockDR > 0 })
+	CombatService.fx({
+		t = "hurt",
+		dst = target.id,
+		amount = toHealth,
+		pos = tp,
+		blocked = blockDR > 0,
+		heavy = toHealth >= 0.15 * target.maxHealth, -- client/Effects shakes the camera
+		uid = target.player and target.player.UserId,
+	})
+	Animations.hitStop(enemy, toHealth >= 0.15 * target.maxHealth)
+	if blockDR == 0 then
+		Animations.hurt(target)
+	end
 	CombatService.log(
 		target,
 		string.format("%s hit you for %s%s", attack.name, fmt(toHealth), blockDR > 0 and " (blocked)" or "")
@@ -370,13 +450,16 @@ local function spawnActor(player: Player, character: Model)
 	CombatService.actors[actor.id] = actor
 
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+	task.spawn(Weapons.equip, character, className)
+	player:SetAttribute("Class", className) -- client/Input switches the right click to aiming for the Ranger
 	humanoid.MaxHealth = actor.maxHealth
 	humanoid.Health = actor.maxHealth
+	Ragdoll.onDeath(humanoid)
 	humanoid.Died:Connect(function()
 		actor.dead = true
 		actor.health = 0
 	end)
-	CombatService.log(actor, "You are " .. className .. ". Press 1, 2 or 3 out of combat to switch class.")
+	CombatService.log(actor, "You are " .. className .. ". Press 1 to 4 out of combat to switch class.")
 end
 
 function CombatService.setClass(actor, className: string)
@@ -390,6 +473,11 @@ function CombatService.setClass(actor, className: string)
 	end
 	CombatService.classOf[actor.player] = className
 	actor:applyKit(kit)
+	actor.aimSince = nil
+	actor.player:SetAttribute("Class", className)
+	if actor.model then
+		task.spawn(Weapons.equip, actor.model, className)
+	end
 	CombatService.log(actor, "Switched to " .. className)
 end
 
@@ -397,6 +485,37 @@ end
 -- Requests
 
 local R = Net.Request
+
+local AIM_REACH = 320 -- studs; the client aims up to 300 away [Proto]
+
+-- Climbing and gliding need both hands: the weapon or tool is put out of sight, and comes back after. Gliding
+-- also shows the kit's glider over the character (server/Glider).
+local STOWED_FOLDERS = { "OathWeapon", "OathTool" }
+local function syncStow(actor)
+	if not actor.model then
+		return
+	end
+	task.spawn(Glider.set, actor.model, actor.exertion == "glide")
+	local stow = actor.exertion == "climb" or actor.exertion == "glide"
+	if (actor.stowed == true) == stow then
+		return
+	end
+	actor.stowed = stow
+	for _, name in STOWED_FOLDERS do
+		local folder = actor.model:FindFirstChild(name)
+		for _, part in if folder then folder:GetDescendants() else {} do
+			if part:IsA("BasePart") or part:IsA("Decal") then
+				if stow then
+					part:SetAttribute("ShownTransparency", part.Transparency)
+					part.Transparency = 1
+				else
+					part.Transparency = part:GetAttribute("ShownTransparency") or part.Transparency
+					part:SetAttribute("ShownTransparency", nil)
+				end
+			end
+		end
+	end
+end
 
 local function handleRequest(actor, req)
 	local now = CombatService.now
@@ -409,6 +528,61 @@ local function handleRequest(actor, req)
 	if actor.dead then
 		return
 	end
+	-- Where the player is aiming (client/Input sends the point under the crosshair or mouse). Arrows and Volley
+	-- go there. Ignored if it is not a point or is unreasonably far away.
+	local aim = req.aim
+	local pos = actor:position()
+	if typeof(aim) == "Vector3" and pos and aim == aim and (aim - pos).Magnitude <= AIM_REACH then
+		actor.aimPoint = aim
+	else
+		actor.aimPoint = nil
+	end
+
+	-- Sprint, climb and glide (client/Sprint, client/Traversal) drain stamina while they last. Anything else you do
+	-- ends a sprint.
+	if kind == R.JUMP then
+		-- The client only lets you jump with enough stamina (client/Traversal); this charges for it.
+		actor.stamina = math.max(0, actor.stamina - Constants.JUMP_COST)
+		actor.lastExertion = now
+		return
+	elseif kind == R.EXERT_START then
+		local ok = Constants.EXERTION_DRAIN[req.mode] ~= nil and actor.stamina >= Constants.EXERTION_MIN and not actor.blocking
+		actor.exertion = if ok then req.mode else nil
+		syncStow(actor)
+		return
+	elseif kind == R.EXERT_END then
+		if actor.exertion then
+			actor.exertion = nil
+			actor.lastExertion = now
+		end
+		syncStow(actor)
+		return
+	elseif actor.exertion == "sprint" and kind ~= R.DODGE then
+		-- Attacking, blocking or aiming ends a sprint; a dash does not, so you keep running out of it.
+		actor.exertion = nil
+		actor.lastExertion = now
+	end
+
+	-- A hotbar tool is out (server/Tools): attacks use the tool, and anything else that needs the weapon draws it
+	-- first. Dodge works either way; block does nothing (below).
+	if actor.player and actor.player:GetAttribute("HeldTool") then
+		if kind == R.BASIC or kind == R.HEAVY then
+			CombatService.onToolUse(actor)
+			return
+		elseif kind == R.SKILL or kind == R.SIGNATURE or kind == R.ULTIMATE or kind == R.AIM_START then
+			CombatService.drawWeapon(actor)
+		end
+	end
+
+	if kind == R.AIM_START then
+		if kit and kit.heavy and kit.heavy.needsAim then
+			actor.aimSince = now
+		end
+		return
+	elseif kind == R.AIM_END then
+		actor.aimSince = nil
+		return
+	end
 
 	if kind == R.DODGE then
 		if now - actor.lastDodge < Constants.DODGE_COOLDOWN then
@@ -419,17 +593,23 @@ local function handleRequest(actor, req)
 		end
 		actor.timeline:cancel()
 		actor.blocking = false
+		Animations.cancel(actor)
 		actor.lastDodge = now
 		actor.dodgeUntil = now + Constants.DODGE_INVULN
 	elseif kind == R.BLOCK_START then
 		if actor.timeline.state == "recovery" then
 			return
 		end
+		if actor.player and actor.player:GetAttribute("HeldTool") then
+			return -- tools are not weapons: no block or parry while one is out
+		end
 		actor.timeline:cancel()
 		actor.blocking = true
 		actor.blockStart = now
+		Animations.block(actor, true)
 	elseif kind == R.BLOCK_END then
 		actor.blocking = false
+		Animations.block(actor, false)
 	elseif kind == R.BASIC then
 		local ok, why = Abilities.tryStart(CombatService, actor, kit.basic, now)
 		if not ok and why ~= "busy" then
@@ -478,6 +658,10 @@ local function tick()
 	if CombatService.boss then
 		CombatService.boss:step(now)
 	end
+	for _, npc in CombatService.npcs do
+		npc:step(now)
+	end
+	Projectiles.step(CombatService, now) -- arrows in flight, and Volleys landing
 	for _, actor in CombatService.actors do
 		for key, dot in actor.dots do
 			if now >= dot.nextTick - 1e-6 then
@@ -498,6 +682,7 @@ local function tick()
 			actor.dead = true
 			actor.timeline:cancel()
 			actor.blocking = false
+			Animations.cancel(actor)
 			local humanoid = actor:humanoid()
 			if humanoid then
 				humanoid.Health = 0
@@ -512,7 +697,14 @@ local function tick()
 			if actor.resourceRegen > 0 then
 				actor:gainResource(actor.resourceRegen * (1 + actor.stats.regeneration) * dt)
 			end
-			if not actor.blocking then
+			if actor.exertion then
+				actor.stamina = math.max(0, actor.stamina - Constants.EXERTION_DRAIN[actor.exertion] * dt)
+				actor.lastExertion = now
+				if actor.stamina <= 0 then
+					actor.exertion = nil -- the client sees this in the snapshot: it slows down, lets go or drops
+					syncStow(actor)
+				end
+			elseif not actor.blocking and now - (actor.lastExertion or -math.huge) >= Constants.STAMINA_REGEN_DELAY then
 				actor.stamina = math.min(Constants.STAMINA_POOL, actor.stamina + Constants.STAMINA_REGEN * dt)
 			end
 			if actor.interceptBy and now >= actor.interceptUntil then
@@ -567,9 +759,9 @@ local function snapshotFor(actor)
 		end
 	end
 	for i, def in kit.skills do
-		slot(({ "Q", "E", "R" })[i], def)
+		slot(({ "Z", "X", "C" })[i], def)
 	end
-	slot("T", kit.signatureAction)
+	slot("V", kit.signatureAction)
 
 	local snap = {
 		self = {
@@ -588,6 +780,7 @@ local function snapshotFor(actor)
 			action = actor.timeline.action and actor.timeline.action.name or nil,
 			busy = actor.timeline:busyFor(now),
 			blocking = actor.blocking,
+			exertion = actor.exertion,
 			dead = actor.dead,
 			cds = cds,
 			wd = actor.wd,
@@ -639,7 +832,7 @@ function CombatService.start()
 		requestBudget[player] = budget + 1
 		local queue = queues[player]
 		if queue then
-			table.insert(queue, { kind = req.kind, slot = req.slot, class = req.class })
+			table.insert(queue, { kind = req.kind, slot = req.slot, class = req.class, aim = req.aim, mode = req.mode })
 		end
 	end)
 

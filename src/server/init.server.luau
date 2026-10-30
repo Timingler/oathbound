@@ -4,6 +4,13 @@ local CombatService = require(script.CombatService)
 local Actor = require(script.Actor)
 local Boss = require(script.Boss)
 local Arena = require(script.Arena)
+local ForceR6 = require(script.ForceR6)
+local Duelist = require(script.Duelist)
+local Inventory = require(script.Inventory)
+local Quests = require(script.Quests)
+
+-- Before anyone spawns: every character is R6, which all the animations need.
+ForceR6.start()
 
 local arena = Arena.build()
 
@@ -11,26 +18,20 @@ local bossActor = Actor.new({
 	kind = "boss",
 	name = "Ashen Sentinel",
 	team = "enemies",
-	model = arena.boss,
+	model = Boss.build(arena.bossPost),
 	level = 50,
 	itemLevel = 65,
 	maxHealth = Boss.MAX_HEALTH,
 })
 CombatService.addEnemy(bossActor)
-CombatService.boss = Boss.new(CombatService, bossActor, arena.bossHome)
+CombatService.boss = Boss.new(CombatService, bossActor, arena.bossPost)
 
-local dummyActor = Actor.new({
-	kind = "dummy",
-	name = "Training Dummy",
-	team = "enemies",
-	model = arena.dummy,
-	level = 50,
-	itemLevel = 65,
-	maxHealth = 1e9,
-})
-dummyActor.radius = 2
-dummyActor.enemyDR = 0
-CombatService.addEnemy(dummyActor)
-CombatService.dummy = dummyActor
+local dummy = Duelist.new(CombatService, { name = "Training Dummy", home = arena.dummyHome, passive = true })
+CombatService.dummy = dummy.actor
+
+Duelist.new(CombatService, { name = "Hollow Duelist", home = arena.duelistHome })
 
 CombatService.start()
+Inventory.start(CombatService)
+Quests.start(CombatService, Inventory)
+CombatService.onEvent = Quests.event

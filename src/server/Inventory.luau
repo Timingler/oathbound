@@ -1,0 +1,577 @@
+-- Per-player gear: a bag of items and what is equipped in each slot. Equipped modifiers become the actor's
+-- ratings, and the average item level of the equipped set becomes its item level, so gear changes WD, HP and every
+-- secondary stat through the normal formulas. Prototype only: the bag is generated per player and not saved.
+-- Weapons and off-hands belong to one class; switching class swaps in your best gear for the new one. What is
+-- equipped also shows on the character (server/Gear for armour and off-hands, server/Weapons for the main hand).
+-- `service` is CombatService, passed in to avoid a require cycle.
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Shared = ReplicatedStorage:WaitForChild("Shared")
+local Items = require(Shared.Items)
+local Net = require(Shared.Net)
+local Kits = require(Shared.Kits)
+local Gear = require(script.Parent.Gear)
+local Weapons = require(script.Parent.Weapons)
+local Tools = require(script.Parent.Tools)
+
+local Inventory = {}
+
+local COMBAT_TIMEOUT = 5 -- matches CombatService: no gear swaps until 5 s after the last hit [Proto]
+local BASE_ITEM_LEVEL = 65 -- the starter set; matches the arena's item level so nothing changes until you swap [Proto]
+local BAG_SIZE = 18 -- random items in the starter bag [Proto]
+
+local UNIQUE_EFFECTS = {
+	"Parries restore 5% of your HP",
+	"Your first hit after a dodge deals 20% more damage",
+	"Heals on allies below 30% HP are 15% stronger",
+}
+
+-- Weighted rarity roll for the starter bag [Proto].
+local RARITY_WEIGHTS = { common = 30, uncommon = 28, rare = 20, epic = 12, legendary = 7, unique = 3 }
+
+-- hotbar[i] is "weapon" (the equipped main hand), a tool item's uid, or false when empty (false, not nil, so the
+-- array crosses the remote intact); active is the slot in hand.
+type PlayerInv = {
+	items: { [string]: Items.Item },
+	order: { string },
+	equipped: { [string]: string },
+	nextUid: number,
+	hotbar: { string | false },
+	active: number?,
+}
+
+local inventories: { [Player]: PlayerInv } = {}
+local service
+local remote: RemoteEvent
+
+local function rollRarity(rng: Random): string
+	local total = 0
+	for _, w in RARITY_WEIGHTS do
+		total += w
+	end
+	local pick = rng:NextNumber() * total
+	for _, rarity in Items.RARITIES do
+		pick -= RARITY_WEIGHTS[rarity.id]
+		if pick <= 0 then
+			return rarity.id
+		end
+	end
+	return "common"
+end
+
+-- Picks what the item is: armour from Items.ARMOR, weapons and off-hands from the class's list. `first` takes the
+-- starter entry instead of a random one.
+local function pickBase(rng: Random, slot: string, className: string?, first: boolean?)
+	local list
+	if slot == "mainHand" or slot == "offHand" then
+		list = Items.CLASS_GEAR[className or Kits.ORDER[rng:NextInteger(1, #Kits.ORDER)]][slot]
+	else
+		list = Items.ARMOR[slot]
+	end
+	return list[if first then 1 else rng:NextInteger(1, #list)]
+end
+
+local function classOfBase(slot: string, base): string?
+	if slot ~= "mainHand" and slot ~= "offHand" then
+		return nil
+	end
+	for className, gear in Items.CLASS_GEAR do
+		if table.find(gear[slot], base) then
+			return className
+		end
+	end
+	return nil
+end
+
+local function makeItem(
+	inv: PlayerInv,
+	rng: Random,
+	slot: string,
+	rarityId: string,
+	itemLevel: number,
+	className: string?,
+	first: boolean?
+): Items.Item
+	local rarity = Items.rarity(rarityId)
+	local pool = table.clone(Items.STAT_ORDER)
+	local modifiers = {}
+	for _ = 1, rarity.modifiers do
+		local stat = table.remove(pool, rng:NextInteger(1, #pool))
+		local roll = Items.STATS[stat].roll
+		local scale = 1 + 0.02 * (itemLevel - BASE_ITEM_LEVEL)
+		if slot == "body" then
+			scale *= Items.BODY_ROLL_SCALE -- one piece in place of chest and legs carries both budgets
+		end
+		table.insert(modifiers, { stat = stat, rating = math.floor(rng:NextInteger(roll[1], roll[2]) * scale) })
+	end
+	local base = pickBase(rng, slot, className, first)
+	inv.nextUid += 1
+	return {
+		uid = tostring(inv.nextUid),
+		name = base.name,
+		look = base.look,
+		shirt = base.shirt,
+		pants = base.pants,
+		tint = base.tint,
+		finish = base.finish,
+		model = base.model,
+		class = classOfBase(slot, base),
+		slot = slot,
+		rarity = rarityId,
+		itemLevel = itemLevel,
+		modifiers = modifiers,
+		unique = rarityId == "unique" and UNIQUE_EFFECTS[rng:NextInteger(1, #UNIQUE_EFFECTS)] or nil,
+	}
+end
+
+local function add(inv: PlayerInv, item: Items.Item)
+	inv.items[item.uid] = item
+	table.insert(inv.order, item.uid)
+end
+
+local function currentClass(player: Player): string
+	local actor = service.byPlayer[player]
+	return (actor and actor.kit and actor.kit.id) or service.classOf[player] or "Assassin"
+end
+
+local function create(player: Player): PlayerInv
+	local inv: PlayerInv = { items = {}, order = {}, equipped = {}, nextUid = 0, hotbar = table.create(Items.HOTBAR_SIZE, false), active = 1 }
+	inv.hotbar[1] = "weapon"
+	local rng = Random.new(player.UserId + os.time())
+	local className = currentClass(player)
+	-- A Common starter armour set, equipped, and every class's starter weapon and off-hand; yours equipped.
+	for _, slot in Items.SLOTS do
+		if slot.id ~= "mainHand" and slot.id ~= "offHand" then
+			local item = makeItem(inv, rng, slot.id, "common", BASE_ITEM_LEVEL, nil, true)
+			add(inv, item)
+			inv.equipped[slot.id] = item.uid
+		end
+	end
+	for _, name in Kits.ORDER do
+		for _, slot in { "mainHand", "offHand" } do
+			local item = makeItem(inv, rng, slot, "common", BASE_ITEM_LEVEL, name, true)
+			add(inv, item)
+			if name == className then
+				inv.equipped[slot] = item.uid
+			end
+		end
+	end
+	-- One of each utility tool, on the hotbar after the weapon.
+	for i, tool in Items.TOOLS do
+		inv.nextUid += 1
+		local item = {
+			uid = tostring(inv.nextUid),
+			name = tool.name,
+			slot = "tool",
+			tool = tool.id,
+			rarity = "common",
+			itemLevel = BASE_ITEM_LEVEL,
+			modifiers = {},
+		}
+		add(inv, item)
+		if i + 1 <= Items.HOTBAR_SIZE then
+			inv.hotbar[i + 1] = item.uid
+		end
+	end
+	-- Loot to try on: one of each rarity first so every colour shows, then random.
+	for i = 1, BAG_SIZE do
+		local slot = Items.SLOTS[rng:NextInteger(1, #Items.SLOTS)].id
+		local rarityId = if i <= #Items.RARITIES then Items.RARITIES[i].id else rollRarity(rng)
+		add(inv, makeItem(inv, rng, slot, rarityId, rng:NextInteger(60, 72)))
+	end
+	return inv
+end
+
+-- Ratings and item level from the equipped set. Empty slots count at the starter item level.
+local function gearStats(inv: PlayerInv)
+	local ratings = {}
+	local levels = 0
+	for _, slot in Items.SLOTS do
+		local item = inv.items[inv.equipped[slot.id] or ""]
+		if item then
+			levels += item.itemLevel
+			for _, m in item.modifiers do
+				ratings[m.stat] = (ratings[m.stat] or 0) + m.rating
+			end
+		else
+			levels += BASE_ITEM_LEVEL
+		end
+	end
+	return ratings, levels / #Items.SLOTS
+end
+
+local function actorOf(player: Player)
+	return service.byPlayer[player]
+end
+
+local function equippedItems(inv: PlayerInv): { [string]: Items.Item }
+	local out = {}
+	for slot, uid in inv.equipped do
+		out[slot] = inv.items[uid]
+	end
+	return out
+end
+
+-- Stats, then looks. `weapon` also rebuilds the held weapon (it reloads meshes, so only when the main hand changed).
+local function applyTo(player: Player, weapon: boolean?)
+	local inv = inventories[player]
+	local actor = actorOf(player)
+	if not inv or not actor then
+		return
+	end
+	local ratings, itemLevel = gearStats(inv)
+	actor:refreshGear(ratings, itemLevel)
+	local humanoid = actor:humanoid()
+	if humanoid then
+		humanoid.MaxHealth = actor.maxHealth
+		humanoid.Health = actor.health
+	end
+	local character = player.Character
+	if character and actor.model == character then
+		Gear.apply(character, equippedItems(inv))
+		if weapon and actor.kit then
+			task.spawn(Weapons.equip, character, actor.kit.id)
+		end
+	end
+end
+
+local function snapshot(player: Player, message: string?)
+	local inv = inventories[player]
+	if not inv then
+		return
+	end
+	local list = {}
+	for _, uid in inv.order do
+		table.insert(list, inv.items[uid])
+	end
+	local actor = actorOf(player)
+	local stats = nil
+	if actor then
+		stats = {
+			className = actor.kit and actor.kit.id,
+			itemLevel = actor.itemLevel,
+			wd = actor.wd,
+			maxHealth = actor.maxHealth,
+			armor = actor.passiveDR,
+			derived = actor.stats,
+			ratings = actor.ratings,
+		}
+	end
+	remote:FireClient(player, {
+		items = list,
+		equipped = inv.equipped,
+		stats = stats,
+		message = message,
+		hotbar = inv.hotbar,
+		hotbarSize = Items.HOTBAR_SIZE,
+		active = inv.active,
+	})
+end
+
+-- After a class switch: weapons and off-hands of another class come off, and the best of the new class's go on.
+local function fitClass(player: Player)
+	local inv = inventories[player]
+	if not inv then
+		return
+	end
+	local className = currentClass(player)
+	for _, slot in { "mainHand", "offHand" } do
+		local worn = inv.items[inv.equipped[slot] or ""]
+		if not worn or worn.class ~= className then
+			local best, bestScore = nil, -1
+			for _, item in inv.items do
+				if item.slot == slot and item.class == className then
+					local score = Items.rarity(item.rarity).rank * 1000 + item.itemLevel
+					if score > bestScore then
+						best, bestScore = item, score
+					end
+				end
+			end
+			inv.equipped[slot] = best and best.uid or nil
+		end
+	end
+	applyTo(player, true)
+	snapshot(player)
+end
+
+local function inCombat(actor): boolean
+	return actor ~= nil and service.now - actor.lastCombat < COMBAT_TIMEOUT
+end
+
+----------------------------------------------------------------------------------------------------
+-- Hotbar
+
+local function find(inv: PlayerInv, entry: string): number?
+	for i = 1, Items.HOTBAR_SIZE do
+		if inv.hotbar[i] == entry then
+			return i
+		end
+	end
+	return nil
+end
+
+local function toolOf(inv: PlayerInv, entry: string | false | nil)
+	local item = entry and entry ~= "weapon" and inv.items[entry]
+	return item and item.tool and item or nil
+end
+
+-- Puts slot `index` in the hand: the weapon, or a tool with the weapon put away.
+local function selectSlot(player: Player, inv: PlayerInv, index: number)
+	local character = player.Character
+	local actor = actorOf(player)
+	if not character or not actor or actor.model ~= character then
+		return
+	end
+	local tool = toolOf(inv, inv.hotbar[index])
+	local wasTool = Tools.held(character)
+	inv.active = index
+	if tool then
+		if wasTool ~= tool.tool then
+			actor.timeline:cancel()
+			actor.blocking = false
+			Tools.hold(player, character, tool.tool)
+		end
+	elseif wasTool then
+		Tools.hold(player, character, nil, actor.kit and actor.kit.id)
+	end
+end
+
+-- Back to the weapon: its hotbar slot if it has one, else no slot lit.
+local function drawWeapon(player: Player, inv: PlayerInv)
+	local index = find(inv, "weapon")
+	if index then
+		selectSlot(player, inv, index)
+	else
+		inv.active = nil
+		local character = player.Character
+		local actor = actorOf(player)
+		if character and Tools.held(character) then
+			Tools.hold(player, character, nil, actor and actor.kit and actor.kit.id)
+		end
+	end
+end
+
+local function handleHotbar(player: Player, inv: PlayerInv, req): boolean
+	local index = req.slot
+	if typeof(index) ~= "number" or index % 1 ~= 0 or index < 1 or index > Items.HOTBAR_SIZE then
+		return false
+	end
+	if req.op == "hotbarSelect" then
+		local entry = inv.hotbar[index]
+		if not entry then
+			return true
+		end
+		-- Pressing the key of the tool in your hand puts it away.
+		if inv.active == index and toolOf(inv, entry) then
+			drawWeapon(player, inv)
+		else
+			selectSlot(player, inv, index)
+		end
+		return true
+	elseif req.op == "hotbarSet" then
+		local entry: string? = nil
+		if typeof(req.uid) == "string" then
+			local item = inv.items[req.uid]
+			if not item then
+				return true
+			end
+			if item.tool then
+				entry = item.uid
+			elseif item.slot == "mainHand" then
+				entry = "weapon" -- the slot always holds whatever main hand is equipped
+			else
+				snapshot(player, "Only weapons and tools go on the hotbar")
+				return true
+			end
+		end
+		-- One slot per entry: moving it frees where it was.
+		local from = entry and find(inv, entry)
+		local displaced = inv.hotbar[index]
+		inv.hotbar[index] = entry or false
+		if from and from ~= index then
+			inv.hotbar[from] = displaced -- swap
+			if inv.active == from then
+				inv.active = index
+			elseif inv.active == index then
+				inv.active = from
+			end
+		end
+		-- The slot in hand changed under you: take out whatever it holds now.
+		if inv.active == index then
+			if entry then
+				selectSlot(player, inv, index)
+			else
+				drawWeapon(player, inv)
+			end
+		end
+		return true
+	end
+	return false
+end
+
+local function handle(player: Player, req)
+	local inv = inventories[player]
+	if not inv or typeof(req) ~= "table" then
+		return
+	end
+	if req.op == "sync" then
+		snapshot(player)
+		return
+	end
+	-- The hotbar works in combat: it changes what is in your hand, not your gear.
+	if handleHotbar(player, inv, req) then
+		snapshot(player)
+		return
+	end
+	local actor = actorOf(player)
+	if inCombat(actor) then
+		snapshot(player, "Cannot change gear in combat")
+		return
+	end
+	local mainBefore = inv.equipped.mainHand
+	if req.op == "equip" and typeof(req.uid) == "string" then
+		local item = inv.items[req.uid]
+		if not item or item.tool then
+			return -- tools go on the hotbar instead
+		end
+		if item.class and item.class ~= currentClass(player) then
+			snapshot(player, string.format("Only a %s can use %s", item.class, item.name))
+			return
+		end
+		inv.equipped[item.slot] = item.uid
+	elseif req.op == "unequip" and typeof(req.slot) == "string" and Items.SLOT_BY_ID[req.slot] then
+		inv.equipped[req.slot] = nil
+	elseif req.op == "unequipAll" then
+		table.clear(inv.equipped)
+	elseif req.op == "equipBest" then
+		-- Highest rarity, then highest item level, per slot.
+		for _, slot in Items.SLOTS do
+			local best, bestScore = nil, -1
+			for _, item in inv.items do
+				if item.slot == slot.id and (item.class == nil or item.class == currentClass(player)) then
+					local score = Items.rarity(item.rarity).rank * 1000 + item.itemLevel
+					if score > bestScore then
+						best, bestScore = item, score
+					end
+				end
+			end
+			inv.equipped[slot.id] = best and best.uid or nil
+		end
+	else
+		return
+	end
+	applyTo(player, inv.equipped.mainHand ~= mainBefore)
+	snapshot(player)
+end
+
+local rewardRng = Random.new()
+local REWARD_SLOTS = { "body", "hands", "feet", "neck", "belt", "mainHand" }
+
+-- A reward (server/Quests): one random piece of `rarityId` gear for the player's class, put in their bag.
+-- Returns its name.
+function Inventory.grant(player: Player, rarityId: string): string?
+	local inv = inventories[player]
+	if not inv then
+		return nil
+	end
+	local slot = REWARD_SLOTS[rewardRng:NextInteger(1, #REWARD_SLOTS)]
+	local item = makeItem(inv, rewardRng, slot, rarityId, BASE_ITEM_LEVEL + 5, currentClass(player))
+	add(inv, item)
+	snapshot(player, "Reward: " .. item.name)
+	return item.name
+end
+
+function Inventory.start(combatService)
+	service = combatService
+	-- The held weapon follows the equipped main hand, when it belongs to the class being equipped.
+	Weapons.variantFor = function(character: Model, className: string): (string?, { number }?)
+		local player = Players:GetPlayerFromCharacter(character)
+		local inv = player and inventories[player]
+		local item = inv and inv.items[inv.equipped.mainHand or ""]
+		if item and item.class == className then
+			return item.model, item.finish
+		end
+		return nil
+	end
+	service.drawWeapon = function(actor)
+		local inv = actor.player and inventories[actor.player]
+		if inv then
+			drawWeapon(actor.player, inv)
+			snapshot(actor.player)
+		end
+	end
+	service.onToolUse = function(actor)
+		local tool = Items.TOOL_BY_ID[actor.player:GetAttribute("HeldTool")]
+		if not tool then
+			return
+		end
+		if tool.verb then
+			service.log(actor, string.format("%s: no %s to %s here yet", tool.name, tool.target, tool.verb))
+		else
+			service.log(actor, tool.name .. ": press its key again to put it away")
+		end
+	end
+	local folder = ReplicatedStorage:WaitForChild(Net.FOLDER)
+	remote = Instance.new("RemoteEvent")
+	remote.Name = Net.INVENTORY
+	remote.Parent = folder
+
+	local budget: { [Player]: number } = {}
+	remote.OnServerEvent:Connect(function(player, req)
+		local used = budget[player] or 0
+		if used >= 10 then
+			return
+		end
+		budget[player] = used + 1
+		task.delay(1, function()
+			budget[player] = math.max(0, (budget[player] or 1) - 1)
+		end)
+		handle(player, req)
+	end)
+
+	local function onPlayer(player: Player)
+		inventories[player] = create(player)
+		-- A new character gets a fresh actor; put the gear back on it once CombatService has made it.
+		local function onCharacter(character: Model)
+			-- A new character starts with the weapon out.
+			player:SetAttribute("HeldTool", nil)
+			local inv = inventories[player]
+			if inv then
+				inv.active = find(inv, "weapon")
+			end
+			-- server/ForceR6 dresses the character in the avatar asynchronously, which replaces its clothing; put the
+			-- gear back once that is done.
+			character:GetAttributeChangedSignal("Dressed"):Connect(function()
+				applyTo(player, false)
+			end)
+			for _ = 1, 50 do
+				local actor = actorOf(player)
+				if actor and actor.model == character then
+					applyTo(player, true)
+					snapshot(player)
+					return
+				end
+				task.wait(0.1)
+			end
+		end
+		player.CharacterAdded:Connect(onCharacter)
+		player:GetAttributeChangedSignal("Class"):Connect(function()
+			fitClass(player)
+		end)
+		if player.Character then
+			task.spawn(onCharacter, player.Character)
+		end
+	end
+	Players.PlayerAdded:Connect(onPlayer)
+	for _, player in Players:GetPlayers() do
+		task.spawn(onPlayer, player)
+	end
+	Players.PlayerRemoving:Connect(function(player)
+		inventories[player] = nil
+		budget[player] = nil
+	end)
+end
+
+return Inventory

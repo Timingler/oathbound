@@ -1,5 +1,5 @@
 -- Builds the test arena from code, so the repo needs no place file: a floor, a spawn,
--- the Ashen Sentinel boss and a training dummy. Placeholder blocks until real art exists.
+-- and posts for the boss, the training dummy and the duelist. Placeholder blocks until real art exists.
 
 local Arena = {}
 
@@ -55,53 +55,32 @@ function Arena.build()
 		spawn.Parent = folder
 	end
 
-	-- Boss: a body with a glowing face so players can read which way it points.
-	local boss = Instance.new("Model")
-	boss.Name = "Ashen Sentinel"
-	local body = part({
-		Name = "Body",
-		Size = Vector3.new(8, 12, 8),
-		Color = Color3.fromRGB(90, 30, 30),
-		Material = Enum.Material.Basalt,
-		CanCollide = true,
-		Parent = boss,
+	-- A rock mesa to climb and glide from (client/Traversal), off to the side of the spawn.
+	part({
+		Name = "Mesa",
+		Size = Vector3.new(26, 32, 26),
+		Position = Vector3.new(-85, 16, 40),
+		Color = Color3.fromRGB(92, 86, 80),
+		Material = Enum.Material.Rock,
+		Parent = folder,
 	})
 	part({
-		Name = "Face",
-		Size = Vector3.new(6, 2, 1),
-		CFrame = CFrame.new(0, 3, -4.5),
-		Color = Color3.fromRGB(255, 120, 40),
-		Material = Enum.Material.Neon,
-		CanCollide = false,
-		Parent = boss,
+		Name = "Ledge",
+		Size = Vector3.new(14, 14, 10),
+		Position = Vector3.new(-65, 7, 40),
+		Color = Color3.fromRGB(88, 82, 76),
+		Material = Enum.Material.Rock,
+		Parent = folder,
 	})
-	boss.PrimaryPart = body
-	nameTag(body, "Ashen Sentinel", 9)
-	boss:SetAttribute("DamageScale", 1)
-	local bossHome = CFrame.lookAt(Vector3.new(0, 6, 50), Vector3.new(0, 6, 0))
-	boss:PivotTo(bossHome)
-	boss.Parent = folder
-
-	-- Training dummy: never attacks, measures your damage.
-	local dummy = Instance.new("Model")
-	dummy.Name = "Training Dummy"
-	local dummyBody = part({
-		Name = "Body",
-		Size = Vector3.new(4, 7, 4),
-		Color = Color3.fromRGB(160, 130, 90),
-		Material = Enum.Material.Wood,
-		Parent = dummy,
-	})
-	dummy.PrimaryPart = dummyBody
-	nameTag(dummyBody, "Training Dummy", 5.5)
-	dummy:PivotTo(CFrame.lookAt(Vector3.new(-40, 3.5, -20), Vector3.new(0, 3.5, -40)))
-	dummy.Parent = folder
 
 	folder.Parent = workspace
 	return {
-		boss = boss,
-		bossHome = bossHome,
-		dummy = dummy,
+		-- Ground-level spot the Ashen Sentinel (server/Boss) stands on, far from the spawn so it is never pulled by
+		-- accident. It faces the spawn.
+		bossPost = CFrame.lookAt(Vector3.new(0, 0.05, 130), Vector3.new(0, 0.05, 0)),
+		-- The training dummy and the duelist are R6 rigs built by server/Duelist; these are their posts.
+		dummyHome = CFrame.lookAt(Vector3.new(-40, 3.1, -20), Vector3.new(0, 3.1, -40)),
+		duelistHome = CFrame.lookAt(Vector3.new(40, 3.1, -20), Vector3.new(0, 3.1, -40)),
 	}
 end
 

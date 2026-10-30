@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Formulas = require(Shared.Formulas)
+local Animations = require(script.Parent.Animations)
 
 local Abilities = {}
 
@@ -73,8 +74,9 @@ function Abilities.tryStart(service, actor, def, now: number): (boolean, string?
 	end
 
 	local target = pickTarget(service, actor, def)
-	if def.effect == "strike" or def.effect == "finisher" or def.effect == "dot" then
-		if not target then
+	if def.effect == "strike" or def.effect == "smite" or def.effect == "finisher" or def.effect == "dot" then
+		-- A basic attack swings even with nobody in reach, so a click always does something. It whiffs at fire time.
+		if not target and def ~= actor.kit.basic then
 			return false, "no target in range"
 		end
 	elseif def.effect == "heal" or def.effect == "intercept" then
@@ -86,7 +88,25 @@ function Abilities.tryStart(service, actor, def, now: number): (boolean, string?
 		return false, "target not Marked"
 	end
 
-	actor.timeline:start(def, now, actor.stats.actionSpeed, { target = target })
+	local draw = nil
+	if def.needsAim then
+		-- The Ranger's Aimed Shot: needs right click held; its draw is how long it has been held.
+		if not actor.aimSince then
+			return false, "aim first (hold right click)"
+		end
+		draw = math.clamp((now - actor.aimSince) / (def.fullDraw or 1), 0, 1)
+		actor.aimSince = now -- the next arrow draws from scratch
+	end
+
+	actor.timeline:start(def, now, actor.stats.actionSpeed, { target = target, draw = draw })
+	Animations.action(actor, def, now)
+	service.fx({
+		t = "swing",
+		src = actor.id,
+		class = actor.kit and actor.kit.id,
+		ability = def.id,
+		pos = actor:position(),
+	})
 	return true
 end
 
@@ -102,6 +122,23 @@ function Abilities.tryInstant(service, actor, def, now: number): (boolean, strin
 		actor.untargetableUntil = now + def.untargetable
 		Abilities.startCooldown(actor, def, now)
 		service.log(actor, def.name .. ": untargetable for " .. def.untargetable .. " s")
+		return true
+	elseif def.effect == "disengage" then
+		-- Leap straight back, untouchable for a moment. The owner's client moves the character (client/Input),
+		-- like a dodge; this cancels any wind-up in progress.
+		actor.timeline:cancel()
+		actor.blocking = false
+		Animations.cancel(actor)
+		actor.dodgeUntil = now + def.invuln
+		Abilities.startCooldown(actor, def, now)
+		service.fx({
+			t = "leap",
+			src = actor.id,
+			player = actor.player and actor.player.UserId,
+			dir = -flat(actor:lookVector()).Unit,
+			distance = def.distance,
+			pos = actor:position(),
+		})
 		return true
 	end
 	return false, "unknown instant"
@@ -134,7 +171,9 @@ function Abilities.fire(service, actor, def, payload, now: number)
 			actor:gainResource(def.gain)
 		end
 		if not target then
-			service.log(actor, def.name .. " missed")
+			if def ~= actor.kit.basic then
+				service.log(actor, def.name .. " missed")
+			end
 			return
 		end
 		local coeff = def.coeff
@@ -151,6 +190,17 @@ function Abilities.fire(service, actor, def, payload, now: number)
 		if def.interrupts then
 			service.interrupt(actor, target)
 		end
+	elseif effect == "smite" then
+		if def.gain then
+			actor:gainResource(def.gain)
+		end
+		if target then
+			service.strike(actor, target, def.coeff * wd, def)
+		end
+		local ally = service.lowestAlly(actor, def.healRange, false)
+		if ally and ally.health < ally.maxHealth then
+			service.heal(actor, ally, def.healCoeff * wd, def)
+		end
 	elseif effect == "finisher" then
 		local points = actor.combo
 		actor.combo = 0
@@ -165,6 +215,28 @@ function Abilities.fire(service, actor, def, payload, now: number)
 			return
 		end
 		service.applyDot(actor, target, def, def.dotCoeff * wd)
+	elseif effect == "shot" then
+		-- An arrow: it flies from the bow and hits whatever it meets (server/Projectiles), so no target is needed.
+		if def.gain then
+			actor:gainResource(def.gain)
+		end
+		service.fireArrow(actor, def, target, payload and payload.draw)
+	elseif effect == "volley" then
+		-- Where the player aims (pulled in to the Volley's range), else the enemy in front, else ahead.
+		local point
+		local root = actor:root()
+		local aimed = actor.aimPoint
+		if aimed and root then
+			local offset = flat(aimed - root.Position)
+			point = if offset.Magnitude > def.range then root.Position + offset.Unit * def.range else aimed
+		elseif target and target:isAlive() then
+			point = target:position() :: Vector3
+		else
+			point = root and root.Position + flat(actor:lookVector()).Unit * math.min(def.range, 25)
+		end
+		if point then
+			service.volley(actor, def, point)
+		end
 	elseif effect == "cleave" then
 		local hit = service.enemiesInCone(actor, def.range + RANGE_TOLERANCE, def.coneDegrees)
 		for _, enemy in hit do
@@ -182,6 +254,7 @@ function Abilities.fire(service, actor, def, payload, now: number)
 		end
 	elseif effect == "areaHeal" then
 		local allies = service.alliesNear(actor, def.radius, def.maxTargets)
+		service.fx({ t = "sanctuary", src = actor.id, pos = actor:position(), radius = def.radius })
 		for _, ally in allies do
 			service.heal(actor, ally, def.coeff * wd, def)
 		end

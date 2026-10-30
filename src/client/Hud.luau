@@ -40,6 +40,7 @@ local function label(parent: Instance, props): TextLabel
 	l.TextColor3 = Color3.new(1, 1, 1)
 	l.TextStrokeTransparency = 0.5
 	l.TextSize = 14
+	l.Text = "" -- Roblox shows "Label" until text is set
 	for k, v in props do
 		(l :: any)[k] = v
 	end
@@ -67,6 +68,13 @@ function Hud.start()
 	gui.ResetOnSpawn = false
 	gui.IgnoreGuiInset = true
 	gui.Parent = player:WaitForChild("PlayerGui")
+	-- The inventory screen (client/Inventory) covers the whole view and the talk box (client/Dialogue) sits over
+	-- the bars; the combat HUD would show through either.
+	local function refresh()
+		gui.Enabled = not player:GetAttribute("UiOpen") and not player:GetAttribute("Talking")
+	end
+	player:GetAttributeChangedSignal("UiOpen"):Connect(refresh)
+	player:GetAttributeChangedSignal("Talking"):Connect(refresh)
 
 	-- Boss, top centre
 	ui.bossName = label(gui, { Position = UDim2.new(0.5, -250, 0, 18), Size = UDim2.fromOffset(500, 20), Font = Enum.Font.GothamBold, TextSize = 16 })
@@ -75,15 +83,15 @@ function Hud.start()
 	ui.bossCast = bar(gui, UDim2.new(0.5, -150, 0, 78), UDim2.fromOffset(300, 16), Color3.fromRGB(150, 90, 220))
 	ui.warning = label(gui, { Position = UDim2.new(0.5, -300, 0, 100), Size = UDim2.fromOffset(600, 34), Font = Enum.Font.GothamBlack, TextSize = 26 })
 
-	-- You, bottom centre
-	ui.hp = bar(gui, UDim2.new(0.5, -200, 1, -150), UDim2.fromOffset(400, 22), Color3.fromRGB(60, 180, 80))
-	ui.res = bar(gui, UDim2.new(0.5, -200, 1, -124), UDim2.fromOffset(400, 14), Color3.fromRGB(240, 210, 80))
-	ui.stamina = bar(gui, UDim2.new(0.5, -200, 1, -106), UDim2.fromOffset(400, 8), Color3.fromRGB(120, 170, 230))
-	ui.state = label(gui, { Position = UDim2.new(0.5, -200, 1, -176), Size = UDim2.fromOffset(400, 20) })
+	-- You, bottom centre, above the hotbar (client/Hotbar)
+	ui.hp = bar(gui, UDim2.new(0.5, -200, 1, -234), UDim2.fromOffset(400, 22), Color3.fromRGB(60, 180, 80))
+	ui.res = bar(gui, UDim2.new(0.5, -200, 1, -208), UDim2.fromOffset(400, 14), Color3.fromRGB(240, 210, 80))
+	ui.stamina = bar(gui, UDim2.new(0.5, -200, 1, -190), UDim2.fromOffset(400, 8), Color3.fromRGB(120, 170, 230))
+	ui.state = label(gui, { Position = UDim2.new(0.5, -200, 1, -260), Size = UDim2.fromOffset(400, 20) })
 	ui.slots = {}
-	for i, key in { "LMB", "Q", "E", "R", "T" } do
+	for i, key in { "LMB", "Z", "X", "C", "V" } do
 		local box = frame(gui, {
-			Position = UDim2.new(0.5, -200 + (i - 1) * 82, 1, -92),
+			Position = UDim2.new(0.5, -200 + (i - 1) * 82, 1, -176),
 			Size = UDim2.fromOffset(76, 56),
 			BackgroundColor3 = Color3.fromRGB(30, 30, 36),
 			BackgroundTransparency = 0.15,
@@ -102,7 +110,7 @@ function Hud.start()
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextSize = 12,
 		TextWrapped = true,
-		Text = "LMB tap: basic   LMB hold: heavy\nRMB hold: block (first 200 ms parries)\nSpace: dodge   Q / E / R: skills\nT: Intercept (Warden)   F: ultimate (later)\n1 Assassin   2 Cleric   3 Warden (out of combat)\nLeft Alt: free the mouse",
+		Text = "LMB tap: basic   LMB hold: heavy   RMB hold: block (first 200 ms parries)\nQ: dash   Z / X / C: skills   V: Intercept (Warden)   F: ultimate (later)\nSpace: jump; into a wall to climb, again in the air to glide   Double-tap W: sprint\nE: interact   MMB: lock on   1 to 5: hotbar   F1 to F4: Assassin, Cleric, Warden, Ranger\nShift or Ctrl: toggle camera lock   I: inventory",
 	})
 	ui.class = label(gui, { Position = UDim2.fromOffset(12, 36), Size = UDim2.fromOffset(330, 20), TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.GothamBold, TextSize = 16 })
 
@@ -169,7 +177,7 @@ function Hud.onFx(event)
 		floatText(event.pos, "+" .. fmt(event.amount), Color3.fromRGB(90, 230, 110))
 	elseif t == "hurt" and event.dst == myId then
 		floatText(event.pos, "-" .. fmt(event.amount), Color3.fromRGB(255, 80, 80))
-	elseif t == "avoid" and event.dst == myId then
+	elseif t == "avoid" and (event.dst == myId or event.src == myId) then
 		floatText(event.pos, event.text, Color3.fromRGB(150, 210, 255))
 	elseif t == "broken" then
 		Hud.addLog("The boss is BROKEN: 3 s free hits")
@@ -198,7 +206,7 @@ function Hud.onState(snap)
 
 	ui.slots.LMB.name.Text = "Basic / heavy"
 	ui.slots.LMB.cd.Text = ""
-	for _, key in { "Q", "E", "R", "T" } do
+	for _, key in { "Z", "X", "C", "V" } do
 		local slot = ui.slots[key]
 		local cd = me.cds[key]
 		slot.box.Visible = cd ~= nil
@@ -211,7 +219,7 @@ function Hud.onState(snap)
 
 	local boss = snap.boss
 	if boss and boss.engaged then
-		ui.bossName.Text = boss.name .. (boss.broken and "  BROKEN" or "") .. string.format("   enrage %d:%02d", math.floor(boss.enrage / 60), math.floor(boss.enrage % 60))
+		ui.bossName.Text = boss.name .. (boss.phase == 2 and "  (ignited)" or "") .. (boss.broken and "  BROKEN" or "") .. string.format("   enrage %d:%02d", math.floor(boss.enrage / 60), math.floor(boss.enrage % 60))
 		ui.bossHp(boss.hp, boss.maxHp, string.format("%s / %s (%.1f%%)", fmt(boss.hp), fmt(boss.maxHp), boss.hp / boss.maxHp * 100))
 		ui.bossBreak(boss.breakMeter, boss.breakMax, boss.breakLocked and "Break locked" or "Break")
 		if boss.cast then
