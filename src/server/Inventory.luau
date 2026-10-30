@@ -105,6 +105,7 @@ local function makeItem(
 		shirt = base.shirt,
 		pants = base.pants,
 		tint = base.tint,
+		finish = base.finish,
 		model = base.model,
 		class = classOfBase(slot, base),
 		slot = slot,
@@ -316,12 +317,12 @@ end
 function Inventory.start(combatService)
 	service = combatService
 	-- The held weapon follows the equipped main hand, when it belongs to the class being equipped.
-	Weapons.variantFor = function(character: Model, className: string): string?
+	Weapons.variantFor = function(character: Model, className: string): (string?, { number }?)
 		local player = Players:GetPlayerFromCharacter(character)
 		local inv = player and inventories[player]
 		local item = inv and inv.items[inv.equipped.mainHand or ""]
 		if item and item.class == className then
-			return item.model
+			return item.model, item.finish
 		end
 		return nil
 	end

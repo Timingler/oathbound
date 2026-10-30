@@ -19,18 +19,18 @@ export type Item = {
 	tint: { number }?, -- body armour: RGB multiplied into the Shirt and Pants, so every outfit sits in one palette
 	class: string?, -- weapons and off-hands: the only class that can equip it
 	model: string?, -- main-hand weapons: the WeaponLibrary key (or bow tint in server/Weapons) it shows as
+	finish: { number }?, -- main-hand weapons: RGB multipliers for a blackened or gilded variant of the model
 }
 
 -- Equipment slots in the order the UI lists them.
 Items.SLOTS = {
-	{ id = "head", name = "Head", icon = "⛑", group = "armor" },
 	{ id = "body", name = "Body Armor", icon = "🥋", group = "armor" },
 	{ id = "hands", name = "Hands", icon = "🧤", group = "armor" },
 	{ id = "feet", name = "Feet", icon = "👢", group = "armor" },
 	{ id = "mainHand", name = "Main hand", icon = "⚔", group = "weapon" },
 	{ id = "offHand", name = "Off hand", icon = "🛡", group = "weapon" },
 	{ id = "neck", name = "Neck", icon = "📿", group = "jewelry" },
-	{ id = "ring", name = "Ring", icon = "💍", group = "jewelry" },
+	{ id = "belt", name = "Belt", icon = "🎒", group = "jewelry" },
 }
 
 Items.SLOT_BY_ID = {}
@@ -88,6 +88,10 @@ Items.STAT_ORDER = {
 
 -- What each class can hold. Main hands name the weapon model they show (shared/WeaponLibrary keys, or a bow tint
 -- in server/Weapons); off-hands name a look in server/Gear. The first of each list is the class's starter.
+-- Weapon finishes: multiplied into every part of the weapon model (server/Weapons). [Proto]
+local BLACKENED = { 0.45, 0.43, 0.45 }
+local GILDED = { 1.15, 0.95, 0.55 }
+
 Items.CLASS_GEAR = {
 	Warden = {
 		kind = "Sword and shield",
@@ -97,6 +101,8 @@ Items.CLASS_GEAR = {
 			{ name = "Sabre", model = "Sabre" },
 			{ name = "Cutlass", model = "Cutlass" },
 			{ name = "Rusted Sword", model = "Rusted Sword" },
+			{ name = "Camilla Sabre", model = "Camilla Sabre" },
+			{ name = "Blackened Arming Sword", model = "Sword", finish = BLACKENED },
 		},
 		offHand = {
 			{ name = "Heater Shield" },
@@ -111,6 +117,9 @@ Items.CLASS_GEAR = {
 			{ name = "Long Dagger", model = "Assassin" },
 			{ name = "Curved Dagger", model = "Curved Dagger" },
 			{ name = "Rusted Dagger", model = "Rusted Dagger" },
+			{ name = "Bloodfang", model = "Vamp Dagger" },
+			{ name = "Nightfang", model = "Vamp Dagger 2" },
+			{ name = "Blackened Long Dagger", model = "Assassin", finish = BLACKENED },
 		},
 		offHand = {
 			{ name = "Parrying Dagger" },
@@ -123,6 +132,9 @@ Items.CLASS_GEAR = {
 			{ name = "Ash Hammer", model = "Cleric" },
 			{ name = "Great Hammer", model = "Great Hammer" },
 			{ name = "Rusted Hammer", model = "Rusted Hammer" },
+			{ name = "Gilded Ash Hammer", model = "Cleric", finish = GILDED },
+			{ name = "Blackened Great Hammer", model = "Great Hammer", finish = BLACKENED },
+			{ name = "Gilded Great Hammer", model = "Great Hammer", finish = GILDED },
 		},
 		offHand = {
 			{ name = "Lantern of Vigil", look = "lantern" }, -- the starter: the only off-hand with a real model
@@ -137,6 +149,8 @@ Items.CLASS_GEAR = {
 			{ name = "Ashwood Longbow", model = "Ashwood Longbow" },
 			{ name = "Blackwood Recurve", model = "Blackwood Recurve" },
 			{ name = "Gilded Warbow", model = "Gilded Warbow" },
+			{ name = "Bone Bow", model = "Bone Bow" },
+			{ name = "Bloodwood Bow", model = "Bloodwood Bow" },
 		},
 		offHand = {
 			{ name = "Quiver" },
@@ -149,7 +163,7 @@ Items.CLASS_GEAR = {
 -- (server/Gear), so the look never clashes. It carries the stat budget of a chest and legs piece: its modifier rolls
 -- are BODY_ROLL_SCALE times larger [Proto]. `tint` [Proto] grades every outfit into one muted Oathbound palette.
 -- The small pieces stay modular: gauntlets (hands), Tasset Greaves (feet), necklaces, scarf and mantle (neck).
--- Head and ring have no look for now: stats only. Sources and the art rule are in docs/ASSETS.md. The first of each
+-- Every armour item is visible; head and ring slots are hidden until they have real models. Sources and the art rule are in docs/ASSETS.md. The first of each
 -- list is the starter.
 Items.BODY_ROLL_SCALE = 1.6
 
@@ -159,12 +173,6 @@ local GRADE_BRIGHT = { 200, 192, 180 } -- white trousers, white fur
 local GRADE_VIVID = { 185, 182, 190 } -- saturated blue plate
 
 Items.ARMOR = {
-	head = {
-		{ name = "Iron Helm" },
-		{ name = "Leather Cap" },
-		{ name = "Traveller's Hood" },
-		{ name = "Circlet of Dawn" },
-	},
 	body = {
 		{ name = "Wayfarer's Garb", shirt = 12898857876, pants = 12898848920, tint = GRADE }, -- vania
 		{ name = "Vigil Captain's Uniform", shirt = 12898987440, pants = 12898979861, tint = GRADE }, -- vania
@@ -185,31 +193,31 @@ Items.ARMOR = {
 	},
 	hands = {
 		{ name = "Leather Gauntlets", look = "leatherGauntlet" }, -- vania
-		{ name = "Leather Gloves" },
-		{ name = "Chain Gauntlets" },
-		{ name = "Ashwood Bracers" },
+		{ name = "Linen Wraps", look = "wraps" }, -- vania Arms.Wraps
 	},
 	feet = {
-		{ name = "Soft Boots" },
 		{ name = "Leather Shin Guards", look = "shinGuards" }, -- vania Warrior Greaves leg plates, on the shins
-		{ name = "Iron Sabatons" },
-		{ name = "Marching Boots" },
-		{ name = "Ashen Treads" },
+		{ name = "Iron Shin Guards", look = "shinGuardsIron" },
+		{ name = "Blackened Shin Guards", look = "shinGuardsBlack" },
+		{ name = "Bone Shin Guards", look = "shinGuardsBone" },
 	},
 	neck = {
-		{ name = "Pilgrim's Token" },
+		{ name = "Wool Scarf", look = "scarf" }, -- vania
 		{ name = "Gold Necklace", look = "goldNecklace" }, -- Excry
 		{ name = "Silver Necklace", look = "silverNecklace" }, -- Excry
+		{ name = "Holy Chain", look = "holyChain" }, -- vania
 		{ name = "Ragged Scarf", look = "raggedScarf" }, -- Excry
-		{ name = "Fur Mantle", look = "furCloak" }, -- vania
-		{ name = "Amulet of Embers" },
-		{ name = "Oathstone Pendant" },
+		{ name = "Crimson Cowl", look = "scarf2" }, -- vania Scarf 2
+		{ name = "Checked Scarf", look = "squaredScarf" }, -- hxh Squared Scarf
+		{ name = "Fur Mantle", look = "furCloak" }, -- vania OldFur Cloak
+		{ name = "Snow Fur Mantle", look = "furCloakBack" }, -- vania Back.Fur Cloak
 	},
-	ring = {
-		{ name = "Band of Ash" },
-		{ name = "Signet of the Warden" },
-		{ name = "Ring of Quiet Steps" },
-		{ name = "Gilded Loop" },
+	belt = {
+		{ name = "Leather Strap", look = "chestStrap" }, -- vania Chest Strap
+		{ name = "Traveller's Harness", look = "chestStrap2" }, -- vania Chest Strap2
+		{ name = "Crossed Bandolier", look = "chestStrap3" }, -- vania Chest Strap3
+		{ name = "Satchel", look = "bag" }, -- vania Chest.Bag
+		{ name = "Wool Sash", look = "waistband" }, -- hxh Waistband
 	},
 }
 

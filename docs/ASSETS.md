@@ -99,9 +99,19 @@ Rule for picks: Western medieval fantasy (knight, ranger, priest, rogue, noble);
 | Bandaged Leathers | Excry NpcTemplate |
 | Priest's Cassock | hxh Priest |
 
-**Small 3D pieces** stay, as models in the place under `ServerStorage.OathGear` (save the place to keep them): Leather Gauntlets (hands, vania), Leather Shin Guards (feet slot: the leg plates of vania's Warrior Greaves, moved to the shins and re-finished in dark leather), Gold and Silver Necklace and Ragged Scarf (neck, Excry), Fur Mantle (neck, vania OldFur Cloak), Lantern of Vigil (Cleric off-hand, vania). Helmets, hoods and the crown are removed for now; their models are unused in OathGear.
+**Small 3D pieces** are models in the place under `ServerStorage.OathGear` (save the place to keep them). Every armour slot shows something; head and ring slots are hidden until they have real models.
 
-Rejected: the vania Boss Cloak (white veil), Warrior Chausses (oversized); haori, gi and hakama sets, bead necklaces (East Asian); Kurapika, Chrollo, Netero, Feitan outfits (named characters); farmer, bandit, waistcoat, suits, hoodies, jeans, graphic tees, kimono and tactical gear from the remaining Excry, hxh, REFramework and Anime Brigade clothing (modern, sci-fi or East Asian).
+| Slot | Items | Source |
+|---|---|---|
+| Hands | Leather Gauntlets, Linen Wraps | vania Arms |
+| Feet | Leather, Iron, Blackened, Bone Shin Guards | vania Warrior Greaves leg plates, re-finished |
+| Neck | Wool Scarf, Crimson Cowl, Holy Chain, Fur Mantle, Snow Fur Mantle (vania); Gold and Silver Necklace, Ragged Scarf (Excry); Checked Scarf (hxh) | as listed |
+| Belt | Leather Strap, Traveller's Harness, Crossed Bandolier, Satchel (vania Chest); Wool Sash (hxh Waistband) | as listed |
+| Cleric off-hand | Lantern of Vigil | vania |
+
+Bright white pieces are retinted to linen and wool. Weapons: 7 Warden swords, 6 Assassin daggers, 6 Cleric hammers, 6 Ranger bows; new models Camilla Sabre and Vamp Dagger 1 and 2 (vania), plus blackened and gilded finishes and two bow tints. Shields, tomes and quivers have no model in the cleared files, so those off-hands still show nothing.
+
+Rejected: vania Buckled Cloak (a skinned mesh that renders broken on R6), hxh Bandages and Excry Bronze Necklace (not visible on R6), vania Scarf 3 (a thin band), Gear Hammer (steampunk); the vania Boss Cloak (white veil), Warrior Chausses (oversized); haori, gi and hakama sets, bead necklaces (East Asian); Kurapika, Chrollo, Netero, Feitan outfits (named characters); farmer, bandit, waistcoat, suits, hoodies, jeans, graphic tees, kimono and tactical gear from the remaining Excry, hxh, REFramework and Anime Brigade clothing (modern, sci-fi or East Asian).
 
 No shields, tomes, quivers, boots or rings exist in the cleared files: head, ring and most off-hands are stats only.
 

@@ -10,7 +10,7 @@ def inv(a):
 def n(v): return repr(round(float(v),4))
 I=rbx.load(sys.argv[1])
 # (key, vania folder, model). The first three are each class's default; the rest are variants that gear items name.
-PICK=[("Warden","Sword","Mika"),("Assassin","Dagger","Long Dagger"),("Cleric","GreatHammer","OGreat Hammer"),
+PICK=[("Vamp Dagger","Dagger","Vamp Dagger"),("Vamp Dagger 2","Dagger","Vamp Dagger 2"),("Camilla Sabre","Sword","Camilla Sabre"),("Gear Hammer","GreatHammer","Gear Hammer"),("Warden","Sword","Mika"),("Assassin","Dagger","Long Dagger"),("Cleric","GreatHammer","OGreat Hammer"),
     ("Sword","Sword","Sword"),("Sabre","Sword","Sabre"),("Cutlass","Sword","Cutlass"),("Rusted Sword","Sword","Rusted Sword"),
     ("Curved Dagger","Dagger","Curved Dagger"),("Rusted Dagger","Dagger","Rusted Dagger"),
     ("Great Hammer","GreatHammer","Great Hammer"),("Rusted Hammer","GreatHammer","Rusted GreatHammer")]

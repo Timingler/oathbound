@@ -257,6 +257,7 @@ local SLOT_LIMBS = {
 	hands = { "Left Arm", "Right Arm" },
 	feet = { "Left Leg", "Right Leg" },
 	neck = { "Torso" },
+	belt = { "Torso" },
 	ring = { "Right Arm" },
 	mainHand = { "Right Arm" },
 	offHand = { "Left Arm" },

@@ -28,10 +28,12 @@ local BOW_TINTS = {
 	["Ashwood Longbow"] = Color3.fromRGB(196, 170, 128),
 	["Blackwood Recurve"] = Color3.fromRGB(44, 36, 34),
 	["Gilded Warbow"] = Color3.fromRGB(214, 176, 98),
+	["Bone Bow"] = Color3.fromRGB(214, 204, 176),
+	["Bloodwood Bow"] = Color3.fromRGB(104, 38, 30),
 }
 
 -- Returns the equipped variant name for `character` as `className`, or nil. Set by server/Inventory.
-Weapons.variantFor = function(_character: Model, _className: string): string?
+Weapons.variantFor = function(_character: Model, _className: string): (string?, { number }?)
 	return nil
 end
 
@@ -167,7 +169,7 @@ function Weapons.equip(character: Model, className: string)
 		old:Destroy()
 	end
 	hold(character, nil)
-	local variant = Weapons.variantFor(character, className)
+	local variant, finish = Weapons.variantFor(character, className)
 	local def = (variant and WeaponLibrary[variant]) or WeaponLibrary[className]
 	local arm = character:WaitForChild("Right Arm", 10) :: BasePart?
 	local leftArm = character:WaitForChild("Left Arm", 10) :: BasePart?
@@ -241,6 +243,10 @@ function Weapons.equip(character: Model, className: string)
 				weld.Part1 = part
 				weld.C0 = cf(partDef.cframe)
 				weld.Parent = part
+			end
+			if finish then
+				local c = part.Color
+				part.Color = Color3.new(math.min(1, c.R * finish[1]), math.min(1, c.G * finish[2]), math.min(1, c.B * finish[3]))
 			end
 			part.Parent = folder
 		end
