@@ -15,6 +15,7 @@ local Effects = require(script.Effects)
 local Inventory = require(script.Inventory)
 local Hotbar = require(script.Hotbar)
 local Sprint = require(script.Sprint)
+local Traversal = require(script.Traversal)
 
 -- No Roblox player list (Tab opens the inventory instead) and no Roblox backpack (the hotbar replaces it).
 pcall(function()
@@ -27,6 +28,7 @@ Input.onPredictArrow = Effects.predictArrow
 Input.start()
 Locomotion.start()
 task.spawn(Sprint.start) -- waits for its remote
+task.spawn(Traversal.start) -- waits for the same remote
 task.spawn(Inventory.start) -- waits for its remote
 task.spawn(Hotbar.start, Inventory.hovered) -- waits for the same remote
 
@@ -64,5 +66,6 @@ local fxRemote = remotes:WaitForChild(Net.FX) :: RemoteEvent
 
 stateRemote.OnClientEvent:Connect(Hud.onState)
 stateRemote.OnClientEvent:Connect(Sprint.onState)
+stateRemote.OnClientEvent:Connect(Traversal.onState)
 fxRemote.OnClientEvent:Connect(Hud.onFx)
 fxRemote.OnClientEvent:Connect(Effects.onFx)

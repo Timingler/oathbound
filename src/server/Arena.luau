@@ -55,6 +55,24 @@ function Arena.build()
 		spawn.Parent = folder
 	end
 
+	-- A rock mesa to climb and glide from (client/Traversal), off to the side of the spawn.
+	part({
+		Name = "Mesa",
+		Size = Vector3.new(26, 32, 26),
+		Position = Vector3.new(-85, 16, 40),
+		Color = Color3.fromRGB(92, 86, 80),
+		Material = Enum.Material.Rock,
+		Parent = folder,
+	})
+	part({
+		Name = "Ledge",
+		Size = Vector3.new(14, 14, 10),
+		Position = Vector3.new(-65, 7, 40),
+		Color = Color3.fromRGB(88, 82, 76),
+		Material = Enum.Material.Rock,
+		Parent = folder,
+	})
+
 	folder.Parent = workspace
 	return {
 		-- Ground-level spot the Ashen Sentinel (server/Boss) stands on, far from the spawn so it is never pulled by

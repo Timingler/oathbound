@@ -18,6 +18,12 @@ AssetIds.Move = {
 	["Run D"] = 110563591852153,
 }
 
+-- Climbing and the cloak glide (client/Traversal). R6.
+AssetIds.Traversal = {
+	Climb = 180436334, -- Roblox's own R6 climb (from the default Animate script; plays in any game)
+	Glide = 112760942460141, -- "Gliding" from the Glider System kit (BestRobloxLib), re-uploaded to the Oathbound account
+}
+
 -- R6 Wall Run by @skaterstudios. R6 only. Not used yet.
 AssetIds.WallRun = {
 	["Run Left"] = 133083618366257,

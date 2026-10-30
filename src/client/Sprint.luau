@@ -38,20 +38,27 @@ local function stop(tellServer: boolean)
 		h.WalkSpeed = Constants.WALK_SPEED
 	end
 	if tellServer then
-		actionRemote:FireServer({ kind = R.SPRINT_END })
+		actionRemote:FireServer({ kind = R.EXERT_END })
 	end
 end
 
 local function start()
 	local h = humanoid()
 	-- Something else owns the walk speed (the Ranger's aim, a frozen menu): no sprint.
-	if sprinting or not h or h.Health <= 0 or h.WalkSpeed ~= Constants.WALK_SPEED or player:GetAttribute("UiOpen") then
+	if
+		sprinting
+		or not h
+		or h.Health <= 0
+		or h.WalkSpeed ~= Constants.WALK_SPEED
+		or player:GetAttribute("UiOpen")
+		or player:GetAttribute("Traversal")
+	then
 		return
 	end
 	sprinting = true
 	startedAt = os.clock()
 	h.WalkSpeed = Constants.SPRINT_SPEED
-	actionRemote:FireServer({ kind = R.SPRINT_START })
+	actionRemote:FireServer({ kind = R.EXERT_START, mode = "sprint" })
 end
 
 function Sprint.isSprinting(): boolean
@@ -61,7 +68,7 @@ end
 -- From the server's snapshot: it ended the sprint (an attack, a block, out of stamina).
 function Sprint.onState(snap)
 	local me = snap and snap.self
-	if sprinting and me and not me.sprinting and os.clock() - startedAt > SERVER_GRACE then
+	if sprinting and me and me.exertion ~= "sprint" and os.clock() - startedAt > SERVER_GRACE then
 		stop(false)
 	end
 end

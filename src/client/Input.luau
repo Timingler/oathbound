@@ -2,11 +2,14 @@
 --   Left click tap / hold   basic attack / heavy attack
 --   Right click hold        block (the first 200 ms is a parry); the Ranger aims instead
 --   Left click while aiming the Ranger's Aimed Shot (the longer you aimed, the stronger)
---   Space                   dodge roll
---   Q, E, R                 skills
---   T                       signature key (Warden Intercept)
+--   Q                       dash / dodge roll
+--   Space                   jump (Roblox's own; client/Traversal adds climbing and the cloak glide)
+--   Z, X, C                 skills
+--   V                       signature key (Warden Intercept)
 --   F                       ultimate (not built yet)
---   1, 2, 3, 4              switch class out of combat [Proto]
+--   E                       interact (reserved for prompts, dialogue and gathering)
+--   Double-tap W            sprint (client/Sprint)
+--   1 to 5                  hotbar (client/Hotbar); F1 to F4 switch class out of combat [Proto]
 --   Left Shift or Left Ctrl toggle the camera lock [Proto]
 -- Camera lock is a toggle, like GPO or Vesteria: off (the default) is the normal Roblox camera with a free mouse
 -- and your character facing where it moves; on hides the cursor, shows a small crosshair and turns your character
@@ -92,6 +95,9 @@ local AIMED = { [R.BASIC] = true, [R.HEAVY] = true, [R.SKILL] = true, [R.SIGNATU
 local function send(kind: string, extra: { [string]: any }?)
 	if player:GetAttribute("UiOpen") then
 		return -- a full-screen menu (the inventory) has the mouse
+	end
+	if player:GetAttribute("Traversal") and kind ~= R.CLASS then
+		return -- no fighting while climbing or gliding (client/Traversal)
 	end
 	local req = { kind = kind }
 	if extra then
@@ -342,28 +348,28 @@ function Input.start()
 		return if mouseFree then Enum.ContextActionResult.Pass else Enum.ContextActionResult.Sink
 	end, false, Enum.ContextActionPriority.High.Value, Enum.UserInputType.MouseButton2)
 
-	-- Space is jump by default; sinking it here turns it into dodge.
+	-- Q dashes; Space is left to Roblox's jump.
 	bind("OathDodge", function(state)
 		if state == Enum.UserInputState.Begin and os.clock() - lastRoll >= Constants.DODGE_COOLDOWN then
 			stopAim()
 			Input.playDodge()
 			send(R.DODGE)
 		end
-	end, Enum.KeyCode.Space)
+	end, Enum.KeyCode.Q)
 
-	local slots = { [Enum.KeyCode.Q] = 1, [Enum.KeyCode.E] = 2, [Enum.KeyCode.R] = 3 }
+	local slots = { [Enum.KeyCode.Z] = 1, [Enum.KeyCode.X] = 2, [Enum.KeyCode.C] = 3 }
 	ContextActionService:BindActionAtPriority("OathSkill", function(_, state, input)
 		if state == Enum.UserInputState.Begin then
 			send(R.SKILL, { slot = slots[input.KeyCode] })
 		end
 		return Enum.ContextActionResult.Sink
-	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.Q, Enum.KeyCode.E, Enum.KeyCode.R)
+	end, false, Enum.ContextActionPriority.High.Value, Enum.KeyCode.Z, Enum.KeyCode.X, Enum.KeyCode.C)
 
 	bind("OathSignature", function(state)
 		if state == Enum.UserInputState.Begin then
 			send(R.SIGNATURE)
 		end
-	end, Enum.KeyCode.T)
+	end, Enum.KeyCode.V)
 
 	bind("OathUltimate", function(state)
 		if state == Enum.UserInputState.Begin then

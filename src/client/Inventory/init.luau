@@ -54,10 +54,13 @@ local CAMERA_HEIGHT = 0.6
 -- leave the character walking. These are the action keys a menu should swallow.
 local BLOCKED_KEYS = {
 	Enum.KeyCode.Q,
+	Enum.KeyCode.Z,
+	Enum.KeyCode.X,
+	Enum.KeyCode.C,
+	Enum.KeyCode.V,
 	Enum.KeyCode.E,
-	Enum.KeyCode.R,
-	Enum.KeyCode.T,
 	Enum.KeyCode.F,
+	Enum.KeyCode.Space,
 	Enum.KeyCode.F1,
 	Enum.KeyCode.F2,
 	Enum.KeyCode.F3,

@@ -103,3 +103,14 @@ These are in the design but have no defined values yet, so they are not built. I
 | Hotbar: 5 slots, weapon in slot 1, then Miner's Pickaxe, Woodcutter's Hatchet, Fishing Rod and Torch. Tools do nothing yet but log a line; the torch gives light (range 22). No tool models until ServerStorage.OathTools has them | `shared/Items.luau`, `server/Tools.luau`, `client/Hotbar.luau` | Gathering is not designed yet. Hotbar changes work in combat; gear swaps do not. |
 | Gear looks are plain parts (helmets, hoods, plate, robes, gauntlets, greaves, boots, amulets, rings, shields, tome, lantern, quiver), trim in the rarity colour | `server/Gear.luau` | Placeholders until real armour meshes exist. |
 | Class weapons: 5 swords, 3 daggers, 3 hammers from vania; bows are the same mesh in 4 stains | `shared/Items.luau`, `shared/WeaponLibrary.luau`, `server/Weapons.luau` | Variety to try on; not balanced against each other (only stats differ). |
+
+## Movement (`client/Sprint.luau`, `client/Traversal.luau`)
+
+| Value | Why it was needed |
+|---|---|
+| Sprint 24 studs/s, double-tap W within 0.3 s | Deepwoken-style sprint with no key clash. |
+| Stamina drain per second: sprint 12, climb 15, glide 7; 15 needed to start; regen pauses 1 s after | Movement shares the block stamina pool. |
+| Jump costs 8 stamina; below that Space does nothing | Charles's rule that jumping respects stamina. |
+| Climb 8 studs/s up and down, 6 sideways; grab walls at least 7 studs tall; walking into one grabs after 0.3 s, jumping into one at once | Our own R6 climb; the library's is R15 only. |
+| Glide 30 studs/s forward, sinking 7 studs/s, turning toward the camera at 2.5/s | Feel values for the cloak glide. |
+| Test mesa (26 x 32 x 26) and ledge west of the spawn | Something to climb and glide from in the arena. |

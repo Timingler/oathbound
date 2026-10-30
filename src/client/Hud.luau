@@ -86,7 +86,7 @@ function Hud.start()
 	ui.stamina = bar(gui, UDim2.new(0.5, -200, 1, -190), UDim2.fromOffset(400, 8), Color3.fromRGB(120, 170, 230))
 	ui.state = label(gui, { Position = UDim2.new(0.5, -200, 1, -260), Size = UDim2.fromOffset(400, 20) })
 	ui.slots = {}
-	for i, key in { "LMB", "Q", "E", "R", "T" } do
+	for i, key in { "LMB", "Z", "X", "C", "V" } do
 		local box = frame(gui, {
 			Position = UDim2.new(0.5, -200 + (i - 1) * 82, 1, -176),
 			Size = UDim2.fromOffset(76, 56),
@@ -107,7 +107,7 @@ function Hud.start()
 		TextYAlignment = Enum.TextYAlignment.Top,
 		TextSize = 12,
 		TextWrapped = true,
-		Text = "LMB tap: basic   LMB hold: heavy\nRMB hold: block (first 200 ms parries)\nSpace: dodge   Q / E / R: skills\nT: Intercept (Warden)   F: ultimate (later)\nF1 Assassin   F2 Cleric   F3 Warden   F4 Ranger (out of combat)\n1 to 5: hotbar   Shift or Ctrl: toggle camera lock   I: inventory",
+		Text = "LMB tap: basic   LMB hold: heavy   RMB hold: block (first 200 ms parries)\nQ: dash   Z / X / C: skills   V: Intercept (Warden)   F: ultimate (later)\nSpace: jump; into a wall to climb, again in the air to glide   Double-tap W: sprint\nE: interact   1 to 5: hotbar   F1 to F4: Assassin, Cleric, Warden, Ranger\nShift or Ctrl: toggle camera lock   I: inventory",
 	})
 	ui.class = label(gui, { Position = UDim2.fromOffset(12, 36), Size = UDim2.fromOffset(330, 20), TextXAlignment = Enum.TextXAlignment.Left, Font = Enum.Font.GothamBold, TextSize = 16 })
 
@@ -203,7 +203,7 @@ function Hud.onState(snap)
 
 	ui.slots.LMB.name.Text = "Basic / heavy"
 	ui.slots.LMB.cd.Text = ""
-	for _, key in { "Q", "E", "R", "T" } do
+	for _, key in { "Z", "X", "C", "V" } do
 		local slot = ui.slots[key]
 		local cd = me.cds[key]
 		slot.box.Visible = cd ~= nil

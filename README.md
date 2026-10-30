@@ -47,11 +47,14 @@ The boss is tuned for a group, so it will flatten one player. While playing, sel
 | Input | Action |
 |---|---|
 | Left click (tap / hold) | Basic attack / heavy attack |
-| Right click (hold) | Block. The first 200 ms is a parry. Ranger: aim |
-| Space | Dodge roll (about 250 ms invulnerable) |
-| Q, E, R | Skills |
-| T | Signature key (Warden's Intercept) |
+| Right click (hold) | Block. The first 200 ms is a parry. Ranger: aim (Q cancels it with a dash) |
+| Q | Dash / dodge roll (about 250 ms invulnerable) |
+| Space | Jump (costs a little stamina). Jump or walk into a tall wall to climb it: W/S up and down, A/D along it, Space leaps off, and you climb over the top. Space again while falling spreads your cloak to glide where the camera looks; Space or landing folds it |
+| Double-tap W (hold) | Sprint |
+| Z, X, C | Skills |
+| V | Signature key (Warden's Intercept) |
 | F | Ultimate (not built yet) |
+| E | Interact (reserved for prompts, dialogue and gathering) |
 | F1 to F4 | Switch to Assassin, Cleric, Warden or Ranger (out of combat) |
 | 1 to 5 | Hotbar: take out what is in that slot (your weapon, or a tool like the pickaxe or torch). Press a tool's key again to put it away; skills draw the weapon on their own |
 | Left Shift or Left Ctrl | Toggle camera lock (off by default): hides the cursor and turns you with the camera |

@@ -25,8 +25,13 @@ Constants.STAMINA_PER_BLOCK = 15
 -- Movement [Proto]: sprint, climb and glide share the stamina pool with blocking.
 Constants.WALK_SPEED = 16 -- studs per second (Roblox default)
 Constants.SPRINT_SPEED = 24
-Constants.SPRINT_DRAIN = 12 -- stamina per second
-Constants.SPRINT_MIN = 15 -- stamina needed to start
+Constants.CLIMB_SPEED = 8
+Constants.GLIDE_SPEED = 30 -- forward, while sinking at GLIDE_SINK
+Constants.GLIDE_SINK = 7
+-- Stamina per second each one costs, and what is needed to start one.
+Constants.EXERTION_DRAIN = { sprint = 12, climb = 15, glide = 7 }
+Constants.EXERTION_MIN = 15
+Constants.JUMP_COST = 8 -- stamina per jump; below it you cannot jump
 Constants.STAMINA_REGEN_DELAY = 1 -- seconds after sprinting, climbing or gliding before stamina comes back
 
 -- Damage categories and caps

@@ -503,18 +503,25 @@ local function handleRequest(actor, req)
 		actor.aimPoint = nil
 	end
 
-	-- Sprint (client/Sprint). Anything else you do ends it.
-	if kind == R.SPRINT_START then
-		actor.sprinting = actor.stamina >= Constants.SPRINT_MIN and not actor.blocking
+	-- Sprint, climb and glide (client/Sprint, client/Traversal) drain stamina while they last. Anything else you do
+	-- ends a sprint.
+	if kind == R.JUMP then
+		-- The client only lets you jump with enough stamina (client/Traversal); this charges for it.
+		actor.stamina = math.max(0, actor.stamina - Constants.JUMP_COST)
+		actor.lastExertion = now
 		return
-	elseif kind == R.SPRINT_END then
-		if actor.sprinting then
-			actor.sprinting = false
+	elseif kind == R.EXERT_START then
+		local ok = Constants.EXERTION_DRAIN[req.mode] ~= nil and actor.stamina >= Constants.EXERTION_MIN and not actor.blocking
+		actor.exertion = if ok then req.mode else nil
+		return
+	elseif kind == R.EXERT_END then
+		if actor.exertion then
+			actor.exertion = nil
 			actor.lastExertion = now
 		end
 		return
-	elseif actor.sprinting then
-		actor.sprinting = false
+	elseif actor.exertion == "sprint" then
+		actor.exertion = nil
 		actor.lastExertion = now
 	end
 
@@ -649,11 +656,11 @@ local function tick()
 			if actor.resourceRegen > 0 then
 				actor:gainResource(actor.resourceRegen * (1 + actor.stats.regeneration) * dt)
 			end
-			if actor.sprinting then
-				actor.stamina = math.max(0, actor.stamina - Constants.SPRINT_DRAIN * dt)
+			if actor.exertion then
+				actor.stamina = math.max(0, actor.stamina - Constants.EXERTION_DRAIN[actor.exertion] * dt)
 				actor.lastExertion = now
 				if actor.stamina <= 0 then
-					actor.sprinting = false -- client/Sprint sees this in the snapshot and slows down
+					actor.exertion = nil -- the client sees this in the snapshot: it slows down, lets go or drops
 				end
 			elseif not actor.blocking and now - (actor.lastExertion or -math.huge) >= Constants.STAMINA_REGEN_DELAY then
 				actor.stamina = math.min(Constants.STAMINA_POOL, actor.stamina + Constants.STAMINA_REGEN * dt)
@@ -710,9 +717,9 @@ local function snapshotFor(actor)
 		end
 	end
 	for i, def in kit.skills do
-		slot(({ "Q", "E", "R" })[i], def)
+		slot(({ "Z", "X", "C" })[i], def)
 	end
-	slot("T", kit.signatureAction)
+	slot("V", kit.signatureAction)
 
 	local snap = {
 		self = {
@@ -731,7 +738,7 @@ local function snapshotFor(actor)
 			action = actor.timeline.action and actor.timeline.action.name or nil,
 			busy = actor.timeline:busyFor(now),
 			blocking = actor.blocking,
-			sprinting = actor.sprinting == true,
+			exertion = actor.exertion,
 			dead = actor.dead,
 			cds = cds,
 			wd = actor.wd,
@@ -783,7 +790,7 @@ function CombatService.start()
 		requestBudget[player] = budget + 1
 		local queue = queues[player]
 		if queue then
-			table.insert(queue, { kind = req.kind, slot = req.slot, class = req.class, aim = req.aim })
+			table.insert(queue, { kind = req.kind, slot = req.slot, class = req.class, aim = req.aim, mode = req.mode })
 		end
 	end)
 

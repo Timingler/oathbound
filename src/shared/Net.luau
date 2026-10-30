@@ -11,8 +11,8 @@ return {
 	Request = {
 		BASIC = "basic",
 		HEAVY = "heavy",
-		SKILL = "skill", -- with slot 1..3 (Q, E, R)
-		SIGNATURE = "signature", -- own key (T), Warden Intercept in the prototype
+		SKILL = "skill", -- with slot 1..3 (Z, X, C)
+		SIGNATURE = "signature", -- own key (V), Warden Intercept in the prototype
 		ULTIMATE = "ultimate", -- F, not built yet
 		BLOCK_START = "blockStart",
 		BLOCK_END = "blockEnd",
@@ -20,8 +20,9 @@ return {
 		CLASS = "class", -- with class name, out of combat only
 		AIM_START = "aimStart", -- Ranger: right click held, the bow starts drawing
 		AIM_END = "aimEnd",
-		SPRINT_START = "sprintStart", -- double-tap W (client/Sprint); the server drains stamina
-		SPRINT_END = "sprintEnd",
+		EXERT_START = "exertStart", -- with mode "sprint" | "climb" | "glide" (client/Sprint, client/Traversal)
+		EXERT_END = "exertEnd",
+		JUMP = "jump", -- the character jumped or leapt off a wall: costs stamina
 	},
 
 	SNAPSHOT_RATE = 0.1,
