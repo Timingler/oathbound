@@ -2,6 +2,8 @@
 -- a glowing pedestal; equipment slots are on the left, the bag on the right, and actions along the bottom. Hover an
 -- item for its modifiers and how it compares with what you wear; click to equip it, or click a worn item to take it
 -- off. Layout after the reference avatar menu Charles sent, restyled for classic fantasy.
+-- The character stands in a relaxed pose with the weapon put away so the outfit is easy to see. Looking at
+-- weapons (the Weapons tab or a weapon slot) or equipping one brings the weapon out in its combat hold.
 -- The server owns the bag (server/Inventory.luau); this only asks and draws.
 
 local ContextActionService = game:GetService("ContextActionService")
@@ -13,6 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local Shared = ReplicatedStorage:WaitForChild("Shared")
 local Items = require(Shared.Items)
+local AssetIds = require(Shared.AssetIds)
 local Net = require(Shared.Net)
 local Theme = require(script.Theme)
 local Effects = require(script.Parent.Effects)
@@ -33,6 +36,14 @@ local orbit = 0 -- camera angle around the character, radians
 local orbitTarget = 0
 local pedestal: Model? = nil
 local savedCameraType: Enum.CameraType? = nil
+local neutralTrack: AnimationTrack? = nil
+local weaponShown = true
+local hiddenParts: { [BasePart]: number } = {} -- weapon part -> its transparency before we hid it
+local stanceUntil = 0 -- weapon hold stays out until this clock time after equipping a weapon
+
+local updateStance: () -> () -- defined with the pose helpers below; render() calls it
+local STANCE_AFTER_EQUIP = 4 -- seconds [Proto]
+local STANCE_FADE = 0.3
 
 local CAMERA_DISTANCE = 10 -- studs in front of the character [Proto]
 local CAMERA_HEIGHT = 0.6
@@ -455,6 +466,9 @@ local function card(item, order: number): Frame
 			remote:FireServer({ op = "unequip", slot = item.slot })
 		else
 			remote:FireServer({ op = "equip", uid = item.uid })
+			if Items.SLOT_BY_ID[item.slot].group == "weapon" then
+				stanceUntil = os.clock() + STANCE_AFTER_EQUIP
+			end
 		end
 	end)
 	return c
@@ -500,6 +514,7 @@ local function render()
 	renderSlots()
 	renderStats()
 	renderBag()
+	updateStance()
 end
 
 local function toast(message: string)
@@ -766,6 +781,80 @@ local function build()
 end
 
 ----------------------------------------------------------------------------------------------------
+-- Pose: neutral to show the outfit, weapon stance to show the weapon
+
+local function weaponFocus(): boolean
+	if os.clock() < stanceUntil or tab == "weapon" then
+		return true
+	end
+	local slot = selectedSlot and Items.SLOT_BY_ID[selectedSlot]
+	return slot ~= nil and slot.group == "weapon"
+end
+
+-- Hides or shows the weapon on this client only (server/Weapons puts it in an "OathWeapon" folder).
+local function showWeapon(show: boolean)
+	if show == weaponShown then
+		return
+	end
+	weaponShown = show
+	if show then
+		for part, transparency in hiddenParts do
+			if part.Parent then
+				part.Transparency = transparency
+			end
+		end
+		table.clear(hiddenParts)
+		return
+	end
+	local c = player.Character
+	local folder = c and c:FindFirstChild("OathWeapon")
+	if not folder then
+		return
+	end
+	for _, part in folder:GetDescendants() do
+		if part:IsA("BasePart") then
+			hiddenParts[part] = part.Transparency
+			part.Transparency = 1
+		end
+	end
+end
+
+-- The relaxed idle, played over the weapon hold (which is Idle priority) while the menu is open.
+local function neutral(): AnimationTrack?
+	if neutralTrack then
+		return neutralTrack
+	end
+	local c = player.Character
+	local humanoid = c and c:FindFirstChildOfClass("Humanoid")
+	local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+	if not animator then
+		return nil
+	end
+	local animation = Instance.new("Animation")
+	animation.AnimationId = AssetIds.uri(AssetIds.Move.Idle)
+	local track = animator:LoadAnimation(animation)
+	track.Priority = Enum.AnimationPriority.Action4
+	track.Looped = true
+	neutralTrack = track
+	return track
+end
+
+function updateStance()
+	local weapon = isOpen and weaponFocus()
+	local track = isOpen and neutral() or neutralTrack
+	if track then
+		if isOpen and not weapon then
+			if not track.IsPlaying then
+				track:Play(STANCE_FADE)
+			end
+		elseif track.IsPlaying then
+			track:Stop(STANCE_FADE)
+		end
+	end
+	showWeapon(not isOpen or weapon)
+end
+
+----------------------------------------------------------------------------------------------------
 -- Pedestal and camera
 
 local function character(): (Model?, BasePart?)
@@ -887,6 +976,8 @@ function Inventory.close()
 	gui.Enabled = false
 	player:SetAttribute("UiOpen", nil)
 	ContextActionService:UnbindAction("OathInventoryBlock")
+	stanceUntil = 0
+	updateStance()
 	if pedestal then
 		pedestal:Destroy()
 		pedestal = nil
@@ -929,6 +1020,9 @@ function Inventory.start()
 
 	player.CharacterAdded:Connect(function()
 		Inventory.close()
+		neutralTrack = nil
+		weaponShown = true
+		table.clear(hiddenParts)
 	end)
 
 	-- Drag with the right mouse button to turn the view.
@@ -957,6 +1051,10 @@ function Inventory.start()
 		if not root then
 			Inventory.close()
 			return
+		end
+		if stanceUntil > 0 and os.clock() >= stanceUntil then
+			stanceUntil = 0
+			updateStance()
 		end
 		-- Ease the orbit and keep the camera on the character.
 		local before = orbit
